@@ -20,9 +20,6 @@ JR = 0x18
 JR_NZ = 0x20
 AND_L = 0xA5
 AND_HL = 0xA6
-XOR_L = 0xAD
-XOR_A = 0xAF
-XOR_D = 0xAA
 DAA = 0x27
 DI = 0xF3
 EI = 0xFB
@@ -109,13 +106,16 @@ POP_DE = 0xD1
 # Generics
 CALL_cc_nn = 0xC4
 INC_ss = 0x03
+XOR_s = 0xB0
 
 # Discovery masks
 COND_MASK = 0xC7
 PAIR_MASK = 0xCF
+XOR_MASK = 0xF8
 
 # Substractors
 PAIR_INC_ss = 0x30
+REG_XOR_s = 0x07
 
 O_MEM_SIZE = 0x0149
 O_ROM_SIZE = 0x0148
@@ -145,7 +145,6 @@ pair_tuples = [
 pc = 0x0100
 sp = 0
 bc = 0
-hl = 0
 ix = 0
 af = 0
 
@@ -236,19 +235,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 operand = ord(data[pc + 1])
                 print("jr 0x{:02X}".format(operand))
                 pc += ord(data[pc + 1]) + 2
-
-            elif opcode == XOR_A:
-                # TODO: NO ESta haciendo XOR
-                print("xor a")
-                r = operator.xor(reg[A], reg[A])
-                reg[C] = 0
-                reg[N] = 0
-                reg[Z] = r == 0
-                reg[PV] = r % 2 == 0
-                reg[H] = 0
-                reg[C] = 0
-                reg[A] = r
-                pc += 1
 
             elif opcode == DI:
                 print("di")
@@ -548,19 +534,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
 
                 pc += 1
 
-            elif opcode == XOR_L:
-                print("xor l")
-                r = operator.xor(reg[A], reg[L])
-                reg[C] = 0
-                reg[N] = 0
-                reg[Z] = r == 0
-                reg[PV] = r % 2 == 0
-                reg[H] = 0
-                reg[C] = 0
-                reg[A] = r
-
-                pc += 1
-
             elif opcode == PUSH_AF:
                 print("push af")
                 sp -= 1
@@ -792,10 +765,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                     print("bit desconocido: {:02X}".format(bop))
                     break
 
-            elif opcode == XOR_D: # 0xAA
-                reg[A] = operator.xor(reg[A], reg[D])
-                pc += 1
-
             elif opcode == OUT: # 0xD3
                 ope = ord(data[pc + 1])
                 print("out (0x{:02X}),a".format(ope))
@@ -893,8 +862,57 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 pc += 1
                 break
 
+            elif (opcode & XOR_MASK) == XOR_s:
+                print("xor")
+                r = (opcode & REG_XOR_s)
+                reg[A] = operator.xor(reg[r], reg[A])
+                reg[S] = reg[A] < 0
+                reg[Z] = reg[A] == 0
+                reg[H] = 0
+                reg[PV] = reg[A] % 2 == 0
+                reg[N] = 0
+                reg[C] = 0
+                pc += 1
+
+            elif opcode == 0xAF: # XOR a
+                # Este es un caos especial porque al parecer
+                # no esta del todo documentado.
+                reg[A] = operator.xor(reg[A], reg[A])
+                reg[S] = reg[A] < 0
+                reg[Z] = reg[A] == 0
+                reg[H] = 0
+                reg[PV] = reg[A] % 2 == 0
+                reg[N] = 0
+                reg[C] = 0
+                pc += 1
+
+            elif opcode == 0xAA: # XOR d
+                # Este es un caos especial porque al parecer
+                # no esta del todo documentado.
+                reg[A] = operator.xor(reg[A], reg[D])
+                reg[S] = reg[A] < 0
+                reg[Z] = reg[A] == 0
+                reg[H] = 0
+                reg[PV] = reg[A] % 2 == 0
+                reg[N] = 0
+                reg[C] = 0
+                pc += 1
+
+            elif opcode == 0xAD: # XOR L
+                # Este es un caos especial porque al parecer
+                # no esta del todo documentado.
+                reg[A] = operator.xor(reg[A], reg[L])
+                reg[S] = reg[A] < 0
+                reg[Z] = reg[A] == 0
+                reg[H] = 0
+                reg[PV] = reg[A] % 2 == 0
+                reg[N] = 0
+                reg[C] = 0
+                pc += 1
+
             else:
                 print("BYE: {} ({})".format(hex(opcode), hex(pc)))
+                print(bin(opcode))
                 break
 
             time.sleep(0.02)
