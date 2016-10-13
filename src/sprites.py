@@ -4,9 +4,7 @@ import operator
 import time
 
 
-opcodes = [0] * 255
-opcodes[0xE6] = 'MOV'
-opcodes[0x11] = 'LXI'
+
 
 JP = 0xC3
 JP_PE = 0xEA
@@ -34,24 +32,7 @@ LD_A_D = 0x7A
 LD_A_NN = 0x3A
 LD_A_BC = 0x0A
 LD_A_DE = 0x1A
-LD_B_HL = 0x46
-LD_AC = 0x79
-LD_BB = 0x40
-LD_BA = 0x47
-LD_BE = 0x43
-LD_BD = 0x42
 LD_BC = 0x01
-LD_CB = 0x48
-LD_CE = 0x4B
-LD_CD = 0x4A
-LD_CC = 0x49
-LD_CL = 0x4D
-LD_DB = 0x50
-LD_DD = 0x52
-LD_DL = 0x55
-LD_DC = 0x51
-LD_DH = 0x54
-LD_DE = 0x53
 LD_DE_a = 0x12
 LD_DE_NN = 0x11
 LD_E = 0x1E
@@ -60,7 +41,6 @@ LD_EH = 0x5C
 LD_EC = 0x59
 LD_SP = 0x31
 LD_HE = 0x63
-LD_HL = 0x21
 LD_HC = 0x61
 LD_H_N = 0x26
 LD_HL_NN = 0x2A
@@ -71,32 +51,19 @@ LD_NN_HL = 0x22
 LD_d_n = 0x16
 LD_D_A = 0x57
 INC_B = 0x1B
-INC_C = 0x0C
-INC_D = 0x14
-INC_E = 0x1C
 LD_B = 0x06
 LD_A = 0x3e
 RLCA = 0x07
 CALL = 0xCD
-DEC_B = 0x05
-DEC_C = 0x15
-DEC_E = 0x1D
 DEC_BC = 0x0B
-DEC_H = 0x25
 DEC_HL = 0x35
 OR_A_C = 0xB1
 RRA = 0x1F
 RLA = 0x17
 ADC_A_L = 0x8D
-ADD_HL_DE = 0x19
 ADD_A_D = 0x82
 IX_INS = 0xDD
-ADD_HL_HL = 0x29
 SBC_AE = 0x9B
-PUSH_AF = 0xF5
-PUSH_BC = 0xC5
-PUSH_DE = 0xD5
-PUSH_HL = 0xE5
 EX_AF_AF = 0x08
 CBITS = 0xCB
 OUT = 0xD3
@@ -107,15 +74,33 @@ POP_DE = 0xD1
 CALL_cc_nn = 0xC4
 INC_ss = 0x03
 XOR_s = 0xB0
+INC_r = 0x04
+DEC_r = 0x05
+ADD_HL_ss = 0x09
+LD_dd_nn = 0x01
+LD_r_r = 0x40
+PUSH_qq = 0xC5
 
 # Discovery masks
 COND_MASK = 0xC7
 PAIR_MASK = 0xCF
 XOR_MASK = 0xF8
+INC_MASK = 0x07
+DEC_MASK = 0xC7
+ADD_HL_ss_MASK = 0xCF
+LD_dd_nn_MASK = 0xCF
+LD_r_r_MASK = 0xC0
+PUSH_qq_MASK = 0xCF
 
 # Substractors
 PAIR_INC_ss = 0x30
 REG_XOR_s = 0x07
+REG_INC_r = 0x38
+REG_DEC_r = 0x38
+REG_ADD_HL_ss = 0x30
+REG_LD_dd_nn = 0x30
+REG_LD_r_r = 0x40
+REG_PUSH_qq = 0x30
 
 O_MEM_SIZE = 0x0149
 O_ROM_SIZE = 0x0148
@@ -261,31 +246,11 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 stack[sp] = pc & 0xFF
                 pc = 0x1038 # ES 38 el correcto
 
-            elif opcode == LD_BE:
-                print("ld b,e")
-                reg[B] = reg[E]
-                pc += 1
-
-            elif opcode == LD_BD:
-                print("ld b,d")
-                reg[B] = reg[D]
-                pc += 1
-
             elif opcode == LD_BC:
                 print("ld b,c")
                 operand, = unpack('<H', data[pc + 1:pc + 3])
                 bc = operand
                 pc += 3
-
-            elif opcode == LD_CE:
-                print("ld c,e")
-                reg[C] = reg[E]
-                pc += 1
-
-            elif opcode == LD_CD:
-                print("ld c,d")
-                reg[C] = reg[D]
-                pc += 1
 
             elif opcode == LD_B:
                 print("ld b")
@@ -301,32 +266,10 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[A] = reg[A] | 0x01
                 pc += 1
 
-            elif opcode == LD_BA:
-                print("ld b,a")
-                reg[B] = reg[A]
-                pc += 1
-
-            elif opcode == LD_CB:
-                print("ld b,c")
-                reg[C] = reg[B]
-                pc += 1
-
-            elif opcode == LD_CC:
-                print("ld cc")
-                # TODO: parece no tener sentido
-                reg[C] = reg[C]
-                pc += 1
-
             elif opcode == LD_A:
                 print("ld a")
                 operand = ord(data[pc + 1])
                 pc += 2
-
-            elif opcode == LD_BB:
-                print("ld b,b")
-                # TODO: parece no tener sentido
-                reg[B] = reg[B]
-                pc += 1
 
             elif opcode == CALL: # 0xCD
                 ope, = unpack('<H', data[pc + 1:pc + 3])
@@ -342,10 +285,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 print(sp)
                 pc += 3
 
-            elif opcode == LD_HL:
-                hl, = unpack('<H', data[pc + 1:pc + 3])
-                print("ld hl,0x{:04X}".format(hl))
-                pc += 3
 
             elif opcode == LD_HL_n:
                 try:
@@ -380,22 +319,12 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 else:
                     pc += 2
 
-            elif opcode == LD_DD:
-                print("ld d,d")
-                # TODO: sin sentido (parece)
-                reg[D] = reg[D]
-                pc += 1
 
             elif opcode == RRA:
                 print("rra")
                 new_c = reg[C]
                 reg[C] = reg[A] & 0x01
                 reg[A] = (reg[A] >> 1) + (new_c << 7)
-                pc += 1
-
-            elif opcode == LD_DE:
-                print("ld d,e")
-                reg[D] = reg[E]
                 pc += 1
 
             elif opcode == DEC_HL:
@@ -442,26 +371,11 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 print("rst 10h")
                 # TODO: PUSH TO THE STAck
                 stack[sp] = 0x10
-                pc +=1
-
-            elif opcode == LD_DH:
-                print("ld d,h")
-                reg[D] = reg[H]
-                pc += 1
-
-            elif opcode == LD_DC:
-                print("ld d,c")
-                reg[D] = reg[C]
                 pc += 1
 
             elif opcode == LD_EC:
                 print("ld e,c")
                 reg[E] = reg[C]
-                pc += 1
-
-            elif opcode == LD_DL:
-                print("ld d,l")
-                reg[D] = reg[L]
                 pc += 1
 
             elif opcode == AND_L:
@@ -492,33 +406,9 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 pc += 2
                 #break
 
-            elif opcode == LD_DB:
-                print("ld d,b")
-                reg[D] = reg[B]
-                pc += 1
-
-            elif opcode == LD_CL:
-                print("ld c,l")
-                reg[C] = reg[L]
-                pc += 1
-
             elif opcode == LD_HE:
                 print("ld h,e")
                 reg[H] = reg[E]
-                pc += 1
-
-            elif opcode == LD_AC:
-                print("ld a,c")
-                reg[A] = reg[C]
-                pc += 1
-
-            elif opcode == ADD_HL_HL:
-                print("add hl,hl")
-                r = hl * 2
-                hl = r
-                reg[H] = (reg[C] & 0b10000000000) >> 11 # TODO: Talvez
-                reg[N] = 0
-                reg[C] = (r & 0x8000) >> 3 # TODO: arreglar
                 pc += 1
 
             elif opcode == SBC_AE:
@@ -532,41 +422,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 #reg[C] = # WHAT?
                 reg[A] = r
 
-                pc += 1
-
-            elif opcode == PUSH_AF:
-                print("push af")
-                sp -= 1
-                stack[sp] = reg[A]
-                sp -= 1
-                stack[sp] = reg[F]
-
-                pc += 1
-                
-            elif opcode == PUSH_BC:
-                print("push bc")
-                sp -= 1
-                stack[sp] = reg[B]
-                sp -= 1
-                stack[sp] = reg[C]
-
-                pc += 1
-
-            elif opcode == PUSH_DE:
-                print("push de")
-                sp -= 1
-                stack[sp] = reg[D]
-                sp -= 1
-                stack[sp] = reg[E]
-
-                pc += 1
-
-            elif opcode == PUSH_HL:
-                print("push hl")
-                sp -= 1
-                stack[sp] = reg[H]
-                sp -= 1
-                stack[sp] = reg[L]
                 pc += 1
 
             elif opcode == RET_P:
@@ -591,28 +446,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[E] = ord(data[pc + 1])
                 pc += 2
 
-            elif opcode == ADD_HL_DE:
-                r = hl + reg[D] + (reg[E] << 8)
-                hl = r
-                # TODO: checar los registros
-                reg[C] = r & 0x8000 
-                reg[H] = r & 0x0800
-                pc += 1
-
-            elif opcode == INC_D:
-                reg[D] += 1
-                pc += 1
-
-            elif opcode == DEC_B:
-                r = reg[B] - 1
-                reg[PV] = reg[B] == 0x7F
-                reg[B] = r
-                reg[S] = r < 0
-                reg[Z] = r == 0
-                reg[H] = r & 0x08
-                reg[N] = 0
-                pc += 1
-
             elif opcode == LD_d_n:
                 # TODO: ver si es signed o unsigned
                 reg[D] = ord(data[pc + 1])
@@ -621,10 +454,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
             elif opcode == LD_DE_a:
                 loc = reg[D] + (reg[E] << 8)
                 stack[loc] = reg[A]
-                pc += 1
-
-            elif opcode == LD_B_HL:
-                reg[B] = stack[hl]
                 pc += 1
 
             elif opcode == RLA:
@@ -643,11 +472,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[S] = reg[A] < 0
                 pc += 1
 
-            elif opcode == INC_C:
-                reg[C] += 1
-                # TODO: actualizar registrosc
-                pc += 1
-
             elif opcode == INC_B:
                 reg[B] += 1
                 # TODO: actualizar registrosc
@@ -663,34 +487,14 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[A] = stack[loc]
                 pc += 1
 
-            elif opcode == INC_E:
-                reg[PV] = reg[E] == 0x7F
-                reg[E] += 1
-                reg[N] = 0
-                reg[S] = reg[E] < 0
-                reg[Z] = reg[E] == 0
-                reg[H] = reg[C] & 0x08
-                pc += 1
-
             elif opcode == LD_EH:
                 reg[E] = reg[H]
-                pc += 1
-
-            elif opcode == DEC_C:
-                reg[C] -= 1
-                # TODO: agregar registros
                 pc += 1
 
             elif opcode == LD_LE:
                 print("ld l,e")
                 reg[E] = reg[L]
                 pc += 1
-
-            elif opcode == DEC_E:
-                print("dec e")
-                reg[E] -= 1
-                pc += 1
-                # TODO: poner los registros
 
             elif opcode == ADD_A_D:
                 print("add a,d")
@@ -711,11 +515,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 print("ld h,0x{:02X}".format(ope))
                 reg[H] = ope
                 pc += 2
-
-            elif opcode == DEC_H:
-                print("dec h")
-                reg[H] -= 1
-                pc += 1
 
             elif opcode == LD_A_NN:
                 loc, = unpack('<H', data[pc + 1:pc + 3])
@@ -752,13 +551,15 @@ with open('../PokemonRed.gb', 'rb') as fp:
             elif opcode == CBITS: # 0xCB
                 bop = ord(data[pc + 1])
                 if bop == 0x46:
-                    reg[Z] = stack[hl] & 0x01
+                    loc = reg[L] + (reg[H] << 8)
+                    reg[Z] = stack[loc] & 0x01
                     reg[N] = 0
                     reg[H] = 1
                     print("bit 0,(hl)")
                     pc += 2
                 elif bop == 0x86:
-                    stack[hl] = stack[hl] & 0xFE
+                    loc = reg[L] + (reg[H] << 8)
+                    stack[loc] = stack[loc] & 0xFE
                     print("res 0,(hl)")
                     pc += 2
                 else:
@@ -778,9 +579,10 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 pc += 1
 
             elif opcode == LD_HL_NN: # 0x2A
-                ope, = unpack('<H', data[pc + 1:pc + 3])
+                loc, = unpack('<H', data[pc + 1:pc + 3])
                 print("ld hl,(0x{:04X})".format(ope))
-                hl = stack[ope]
+                reg[L] = stack[loc]
+                reg[H] = stack[loc + 1]
                 pc += 3
 
             elif opcode == POP_BC: # 0xC1
@@ -795,6 +597,7 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 print("ld d,a")
                 reg[D] = reg[A]
                 pc += 1
+                print(opcode)
 
             elif opcode == LD_A_D: # 0x7A
                 print("ld a,d")
@@ -860,7 +663,6 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[index_a] = (value & 0xFF)
                 reg[index_b] = (value & 0xFF00) >> 8
                 pc += 1
-                break
 
             elif (opcode & XOR_MASK) == XOR_s:
                 print("xor")
@@ -910,12 +712,79 @@ with open('../PokemonRed.gb', 'rb') as fp:
                 reg[C] = 0
                 pc += 1
 
+            elif (opcode & INC_MASK) == INC_r:
+                r = (opcode & REG_INC_r) >> 3
+                reg[PV] = reg[r] == 0x7F
+                reg[r] += 1
+                reg[S] = reg[r] < 0
+                reg[Z] = reg[r] == 0
+                reg[H] = (reg[C] & 0x08) >> 3
+                reg[N] = 0
+                pc += 1
+
+            elif (opcode & DEC_MASK) == DEC_r:
+                r = (opcode & REG_DEC_r) >> 3
+                if r == 0x06: # (HL)
+                    # TODO: arreglar
+                    loc = (reg[H] << 8) + reg[L]
+                    stack[loc] -=1 # TODO: tal vez son 2 bytes
+                    pass
+                else:
+                    reg[PV] = reg[r] == 0x80
+                    reg[r] -= 1
+                    reg[S] = reg[r] < 0
+                    reg[Z] = reg[r] == 0
+                    #reg[H] = reg[B] & 0x10 TODO: TALVEZ
+                    reg[N] = 1
+                pc += 1
+
+            elif (opcode & ADD_HL_ss_MASK) == ADD_HL_ss:
+                break
+                """
+                print("add hl,hl")
+                r = hl * 2
+                hl = r
+                reg[H] = (reg[C] & 0b10000000000) >> 11 # TODO: Talvez
+                reg[N] = 0
+                reg[C] = (r & 0x8000) >> 3 # TODO: arreglar
+                pc += 1"""
+
+            elif (opcode & LD_dd_nn_MASK) == LD_dd_nn:
+                r1, r2 = pair_tuples[(opcode & REG_LD_dd_nn) >> 4]
+                reg[r1] = ord(data[pc + 1])
+                reg[r2] = ord(data[pc + 2])
+                pc += 3
+
+            elif (opcode & LD_r_r_MASK) == LD_r_r:
+                r1 = (opcode & 0x38) >> 3
+                r2 = opcode & 0x07
+                if r2 == 0x06:
+                    loc = reg[L] + (reg[H] << 8)
+                    reg[r1] = stack[loc]
+                    break
+                else:
+                    reg[r1] = reg[r2]
+
+                pc += 1
+
+            elif (opcode & PUSH_qq_MASK) == PUSH_qq:
+                pair = (opcode & REG_PUSH_qq) >> 4
+                r1, r2 = pair
+
+                print("push af")
+                sp -= 1
+                stack[sp] = reg[r2]
+                sp -= 1
+                stack[sp] = reg[r1]
+                pc += 1
+                break
+
             else:
                 print("BYE: {} ({})".format(hex(opcode), hex(pc)))
                 print(bin(opcode))
                 break
 
-            time.sleep(0.02)
+            time.sleep(0.018)
 
     except KeyboardInterrupt:
         print(hexlify(stack[-100:]))
