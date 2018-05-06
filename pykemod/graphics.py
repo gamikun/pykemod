@@ -119,3 +119,16 @@ def raw8_from_image_16(image):
     return rawdata
 
 
+if __name__ == '__main__':
+    """data = (
+        '\x00\x00\x00\x00'
+            '\x00\x00\x00\x00'
+            '\x00\x00\x00\x00'
+            '\x00\x00\x00\x00'
+        '\x00\x00\x00\xFF'
+            '\x00\x00\x00\xFF'
+            '\x00\x00\x00\xFF'
+            '\x00\x00\x00\xFF'
+    ])
+    image = Image.frombytes('RGBA', (8, 8), data)"""
+    pass

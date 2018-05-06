@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+<style type="text/css">
+    body {
+        background: #ddd;
+    }
+    img {
+        image-rendering: optimizeSpeed;
+        image-rendering: -webkit-optimize-contrast;
+    }
+    .sprite-list .sprite {
+        width: 128px;
+        min-height: 128px;
+        text-align: center;
+    }
+    .sprite-list .sprite img {
+        margin-top: 32px;
+    }
+    .sprite-list .sprite p {
+        font-size: 12px;
+        margin-top: 8px;
+    }
+</style>
+</head>
+<body ng-app="pykemod" ng-controller="main">
+
+<div class=""
+
+<div class="row sprite-list">
+    <div class="col-md-2 sprite" ng-repeat="sprite in sprites">
+        <div class="card-body">
+            <img ng-src="{{sprite.url}}"
+                width="64" height="64">
+            <p>{{ sprite.offset }}</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.10/angular.min.js"></script>
+
+<script>
+
+var SPRITES_OFFSET = 0x14000;
+var app = angular.module('pykemod', []);
+
+app.controller('main', function($scope, $http) {
+    var sprites = [];
+
+    // Prepare sprites to be shown
+    for (var index = 0; index < 225; index++) {
+        var offset = SPRITES_OFFSET + 64 * index;
+        sprites.push({
+            url: '/sprite?aoffset=' + offset.toString(),
+            offset: '0x' + offset.toString('16')
+        })
+    }
+
+    $scope.sprites = sprites;
+});
+
+</script>
+
+</body>
+</html>
