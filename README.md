@@ -1,0 +1,1 @@
+![Image of Yaktocat](https://github.com/gamikun/pykemod/sprites-demo.png)
