@@ -79,13 +79,25 @@ def find_text(text):
 def decode_text(data):
     chars = []
     for c in data:
-        if c == b'\x7F':
+        if c == b'\xe0':
+            chars.append("'")
+        elif c == b'\xe8':
+            chars.append('.')
+        elif c == b'\xef':
+            chars.append(b'♂')
+        elif c == b'\xf5':
+            chars.append(b'♀')
+        elif c == b'\x50':
+            pass
+        elif c== b'\xba':
+            chars.append(b'É')
+        elif c == b'\x7F':
             chars.append(b' ')
+        elif ord(c) >= 0x80 and ord(c) <= 0x99:
+            chars.append(chr(ord(c) - 63))
         else:
-            try:
-                chars.append(chr(ord(c) - 63))
-            except ValueError:
-                chars.append('[{:02X}]'.format(ord(c)))
+            chars.append('[{:02X}]'.format(ord(c)))
+                
     return ''.join(chars)
 
 def parse_pkmn_names():
@@ -93,7 +105,8 @@ def parse_pkmn_names():
     for index in range(TOTAL_PKMN_SLOTS):
         offset = NAMES_OFFSET + index * 10
         raw = game[offset:offset + 10]
-        name = [chr(ord(c) - 63) for c in raw]
+        #name = [chr(ord(c) - 63) for c in raw]
+        name = decode_text(raw)
         names[index] = ''.join(name)
     return names
 
@@ -182,6 +195,8 @@ for pkmn_index in range(TOTAL_PKMN_SLOTS):
 
     pkmn.learns = learns
     pkmn.evolutions = evolutions
+
+print('FINAL OFFSET: {:04X}'.format(offset))
 
 for pkmn in pokemons:
     print("{:02X} {}".format(
