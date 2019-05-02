@@ -3,6 +3,10 @@ from pykemod import graphics
 
 
 class Game:
+    PKMN_NAMES_OFFSET = 0x1C21E
+    TOTAL_PKMN_SLOTS = 190
+    EVO_OFFSET = 242135
+
     def __init__(self, data):
         self.data = data
 
@@ -41,3 +45,5 @@ def open_game(filename):
         data = fp.read()
         game = Game(data)
         return game
+
+if __name__ = '__main__':
