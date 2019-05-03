@@ -14,7 +14,7 @@ data = np.array([255 for i in range(1024*1024*3)], dtype=np.dtype('B'))
 # -- Datos básicos --
 BASICS_COLOR = (0,0,0)
 data[0x1D203*3:0x1D203*3+3] = BASICS_COLOR # Nivel de pokemon inicial
-data[0x1D10E*3:0x1D111*3+3] = BASICS_COLOR # Pokemon inicial A
+data[0x1D10E*3:0x1D10E*3+3] = BASICS_COLOR # Pokemon inicial A
 data[0x1D11F*3:0x1D11F*3+3] = BASICS_COLOR # Pokemon inicial B
 data[0x1D130*3:0x1D130*3+3] = BASICS_COLOR # Pokemon inicial C
 

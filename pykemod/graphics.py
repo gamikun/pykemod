@@ -1,4 +1,5 @@
 from PIL import Image
+from binascii import hexlify
 
 default_palette = [
     (0x00,0x00,0x00,0x00),
@@ -118,17 +119,51 @@ def raw8_from_image_16(image):
 
     return rawdata
 
+def planar8x8_from_bitmap(bitmap):
+    planar = bytearray(16)
+    for index, bt in enumerate(bitmap):
+        offset = (index >> 3) << 1
+        bn = 7 - (index % 8)
+        planar[offset + 0] |= (bt & 1) << bn
+        planar[offset + 1] |= ((bt >> 1) & 1) << bn
+    return planar
+
+def bitmap_from_array(a):
+    """ Given an array of numbers or bytearray, return a
+    bitmap of 1 bit per pixel compatible with GB. """
+
+    new_bitmap = bytearray(len(a) >> 3)
+    for index, bt in enumerate(a):
+        offset = index >> 3
+        bn = 7 - (index % 8)
+        new_bitmap[offset] |= (bt & 1) << bn
+    return new_bitmap
+
+def image8x8_from_bitmap1(bitmap):
+    """ Given a bitmap of 1 bit per pixel in the
+    gb format, returns an 4 channels tiff image """
+    image = Image.new('RGBA', (8, 8))
+
+    array = [(0, 0, 0, 0)] * len(bitmap) * 8
+    for index in range(len(bitmap) * 8):
+        bn = 7 - (index % 8)
+        if (ord(bitmap[index >> 3]) >> bn) & 1:
+            array[index] = (0, 0, 0, 255)
+
+    image.putdata(array)
+    return image
+    
 
 if __name__ == '__main__':
-    """data = (
-        '\x00\x00\x00\x00'
-            '\x00\x00\x00\x00'
-            '\x00\x00\x00\x00'
-            '\x00\x00\x00\x00'
-        '\x00\x00\x00\xFF'
-            '\x00\x00\x00\xFF'
-            '\x00\x00\x00\xFF'
-            '\x00\x00\x00\xFF'
+    result = bitmap1_from_array([
+        # 0,0,0,0,0,0,0,0,
+        0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 1, 0, 1, 0, 0, 0,
+        0, 0, 1, 0, 1, 0, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 1, 1, 1, 1, 0, 0,
+        1, 0, 0, 0, 0, 0, 1, 0,
+        1, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
     ])
-    image = Image.frombytes('RGBA', (8, 8), data)"""
-    pass
+    print(hexlify(result))

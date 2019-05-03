@@ -4,7 +4,8 @@ from base64 import b64decode
 from urlparse import parse_qs
 from pykemod.game import Game
 from pykemod.graphics import image16_from_raw, \
-                             image8_from_raw
+                             image8_from_raw, \
+                             image8x8_from_bitmap1
 from binascii import hexlify
 from StringIO import StringIO
 from PIL import Image
@@ -35,9 +36,12 @@ palette = [
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
     game = Game(fp.read())
 
-def fromaddr(addr):
+def fromaddr(addr, do_print=False):
     ar = []
-    tile = game.data[addr:addr + 16] 
+    tile = game.rom[addr:addr + 16] 
+
+    if do_print:
+        print(hexlify(tile))
 
     for y in range(8):
         low = ord(tile[y * 2])
@@ -56,7 +60,7 @@ def fromaddr(addr):
 
 def get16x16(addr, scale=1):
     image = Image.new('RGBA', (16, 16))
-    img1 = fromaddr(addr)
+    img1 = fromaddr(addr, do_print=True)
     img2 = fromaddr(addr + 16)
     img3 = fromaddr(addr + 32)
     img4 = fromaddr(addr + 48)
@@ -101,8 +105,19 @@ def app(environ, start_response):
         qs = parse_qs(environ['QUERY_STRING'])
         scale = qs.get('scale', None)
         scale = int(scale) if scale else 1
+        size = int(qs.get('size', [16])[0])
+        depth = int(qs.get('depth', [2])[0])
         offset = int(qs.get('aoffset')[0])
-        image = get16x16(offset)
+
+        if depth == 1:
+            data = game.rom[offset:offset + 8]
+            image = image8x8_from_bitmap1(data)
+        else:
+            if size == 16:
+                image = get16x16(offset)
+            elif size == 8:
+                image = fromaddr(offset)
+
         io = StringIO()
         io.seek(0)
         image.save('./super.png')
