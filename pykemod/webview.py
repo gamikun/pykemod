@@ -25,33 +25,41 @@ html_templete = """
 </html>
 """
 
-
-palette = [
-    (0x00,0x00,0x00,0x00),
-    (0xff,0xff,0xff,0xff),
-    (0x99,0x99,0x99,0xff),
-    (0x00,0x00,0x00,0xff),
+palettes = [
+    [ # 1bpp
+        (0x00, 0x00, 0x00, 0x00),
+        (0x00, 0x00, 0x00, 0xFF)
+    ],
+    [ # 2bpp
+        #(0x00,0x00,0x00,0x00),
+        (0xff, 0x00, 0xff, 0xff),
+        (0xff,0xff,0xff,0xff),
+        (0x99,0x99,0x99,0xff),
+        (0x00,0x00,0x00,0xff),
+    ]
 ]
+
+
 
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
     game = Game(fp.read())
 
-def fromaddr(addr, do_print=False):
+def fromaddr(addr, do_print=False, bpp=2):
     ar = []
-    tile = game.rom[addr:addr + 16] 
-
-    if do_print:
-        print(hexlify(tile))
+    length = (64 * bpp) / 8
+    tile = game.rom[addr:addr + length] 
+    palette = palettes[bpp - 1]
 
     for y in range(8):
-        low = ord(tile[y * 2])
-        high = ord(tile[y * 2 + 1])
+        low = ord(tile[y * bpp])
+        if bpp == 2:
+            high = ord(tile[y * bpp + 1])
         for bn in range(7, -1, -1):
             p = (low >> bn) & 0x1
-            p |= (high >> bn) << 1
-            p &= 0x3
+            if bpp == 2:
+                p |= (high >> bn) << 1
+                p &= 0x3
             ar.append(palette[p])
-        #break
 
     image = Image.new('RGBA', (8, 8))
     image.putdata(ar)
@@ -70,6 +78,24 @@ def get16x16(addr, scale=1):
     image.paste(img4, (8, 8))
 
     return image
+
+def get_sprite(addr, size, bpp=2):
+    """ TODO: put in graphics submodule """
+    w, h = size
+    sw, sh = w / 8, h / 8
+    pixel_count = w * h
+    segments_count = pixel_count / 64
+    sprite = Image.new('RGBA', (w, h))
+    segment_length = (64 * bpp) / 8
+
+    for index in range(segments_count):
+        y = (index / sw) * 8
+        x = (index % sw) * 8
+        offset = addr + index * segment_length
+        segment = fromaddr(offset, bpp=bpp)
+        sprite.paste(segment, (x, y))
+
+    return sprite
 
 def first_adapter(qs):
     def _first_adapter(qs):
@@ -105,10 +131,14 @@ def app(environ, start_response):
         qs = parse_qs(environ['QUERY_STRING'])
         scale = qs.get('scale', None)
         scale = int(scale) if scale else 1
-        size = int(qs.get('size', [16])[0])
+        size = [int(x) for x in qs.get('size', '16,16')[0].split(',')]
         depth = int(qs.get('depth', [2])[0])
         offset = int(qs.get('aoffset')[0])
 
+
+        image = get_sprite(offset, size, bpp=depth)
+
+        """
         if depth == 1:
             data = game.rom[offset:offset + 8]
             image = image8x8_from_bitmap1(data)
@@ -117,6 +147,7 @@ def app(environ, start_response):
                 image = get16x16(offset)
             elif size == 8:
                 image = fromaddr(offset)
+        """
 
         io = StringIO()
         io.seek(0)
@@ -133,6 +164,8 @@ def app(environ, start_response):
             return [fp.read()]
 
 if __name__ == '__main__':
+    port = 8912
     from wsgiref.simple_server import make_server
-    server = make_server('', 8912, app)
+    server = make_server('', port, app)
+    print('starting: http://localhost:{}'.format(port))
     server.serve_forever()

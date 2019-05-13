@@ -1,6 +1,7 @@
 class Pokemon(object):
     __slots__ = [
         'id', 'evolutions', 'learns', 'name',
+        'description',
     ]
 
     def __init__(self, **k):
@@ -8,6 +9,7 @@ class Pokemon(object):
         self.id = k.get('id', None)
         self.learns = k.get('learns', []),
         self.name = k.get('name', None)
+        self.description = k.get('description', None)
 
 
 class Learn(object):

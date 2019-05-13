@@ -40,31 +40,41 @@
 
 <script>
 
+// ???????           0x40000
+// ???????           0x08000
+// ROUTES PKMN       0x0D51A
+// CHARACTERS A      0x10000
+// OBJECTS IN MAP    0x11140
+// POKEMON LOGO      0x11380:0x11A80
+// LETTERS     8x8 : 0x11A80:0x11B00
+// ?????????       : 0x11B00
+// MAP PARTS   8x8 : 0x11E80
+// KANTO TILEs 8x8 : 0x124b8
 // CHARACTERS 16x16: 0x14000
-// LETTERS     8x8 : 0x11A80 + 128
 // MAP TILES   8x8 : 0x64010
-// MAP PARTS   8x8 : 0x11e80
-// KANTO TILEs 8x8 : 0x124b8 + 
-var SPRITES_OFFSET = 0x124b8;
+
+var SPRITES_OFFSET = 0x1C98A;
 var app = angular.module('pykemod', []);
 
 // 1 = 1bpp
 // 2 = 2bpp (planar)
 var depth = 2;
-var size = 8;
+var width = 16;
+var height = 16;
 //  8 -  8x8  - 1bpp
 // 16 -  8x8  - 2bpp - planar
 // 64 - 16x16 - 2bpp - planar
-var step = 16;
+var step = (width * height * depth) / 8;
+var finalSize = width + ',' + height;
 
 app.controller('main', function($scope, $http) {
     var sprites = [];
 
     // Prepare sprites to be shown
-    for (var index = 0; index < 100; index++) {
+    for (var index = 0; index < 225; index++) {
         var offset = SPRITES_OFFSET + step * index;
         sprites.push({
-            url: '/sprite?aoffset=' + offset.toString() + '&depth=' + depth + '&size=' + size,
+            url: '/sprite?aoffset=' + offset.toString() + '&depth=' + depth + '&size=' + finalSize,
             offset: '0x' + offset.toString('16')
         })
     }
