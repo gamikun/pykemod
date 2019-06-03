@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
 from pykemod import graphics
-from pykemod.pokemon import Pokemon, Evolution, Learn
+from pykemod.pokemon import Pokemon, Evolution, Learn, WildData
 from binascii import unhexlify
 
 
@@ -18,14 +18,20 @@ class Game:
     DIALOGS_OFFSET = 0x0A4001
     TOTAL_CHARS = 128
     TOTAL_ROUTES = 53
+    WILD_OFFSET = 0x00D0DF
+    WILD_OFFSET_B = 0x00D2B1
+    WILD_OFFSET_C = 0x00D36A
+    WILD_OFFSET_D = 0x00D3FC
+    MAP_SPRITES_OFFSET = 0x64010
+    MAP_TILES_OFFSET = 0x0645E0
 
     decode_map = [
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 0
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 16
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 32
-        '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 48
+        '?', '', '', '', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 48
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 64
-        '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 80
+         '', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 80
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 96
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', ' ', # 112
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', # 128
@@ -115,6 +121,14 @@ class Game:
         else:
             return None, offset
 
+    def get_cstring(self, offset, ends=b'\x00'):
+        end_offset = self.rom.index(ends, offset)
+        if end_offset != -1:
+            s = self.rom[offset:end_offset]
+            return s, end_offset + len(ends)
+        else:
+            return None, offset
+
     def parse_moves(self):
         moves = []
         index = 0
@@ -129,6 +143,37 @@ class Game:
 
         self.moves = moves
         self.move_names_upper_limit = offset
+
+    def parse_wild(self, offset=WILD_OFFSET):
+        choices = []
+        total_items = 61
+        current = 0
+
+        while True:
+            block, new_offset = self.get_cstring(offset)
+
+            if block:
+                block_size = len(block)
+                wild = WildData()
+                wild.offset = offset
+                wild.rate = ord(block[0])
+                wild.choices = [(ord(block[index * 2 + 1]),
+                                 ord(block[index * 2 + 2]),)
+                    for index in range((block_size - 1) / 2)
+                ]
+                wild.calculate_chances()
+                choices.append(wild)
+                offset = new_offset
+            elif block == '':
+                choices.append(None)
+                offset = new_offset
+            
+            current += 1
+            
+            if current >= total_items:
+                break
+
+        return choices
 
     def decode_text(self, data):
         chars = []

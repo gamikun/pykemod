@@ -39,6 +39,7 @@ palettes = [
     ]
 ]
 
+tile_cache = [None] * 128
 
 
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
@@ -97,6 +98,23 @@ def get_sprite(addr, size, bpp=2):
 
     return sprite
 
+def get_map_tile(addr):
+    image = Image.new('RGBA', (32, 32))
+    data = game.rom[addr:addr + 16]
+    for index, spid in enumerate(data):
+        spindex = spid - 1
+        if not tile_cache[spindex]:
+            tile_cache[spindex] = get_sprite(
+                game.MAP_SPRITES_OFFSET + 16 * spindex,
+                (8, 8),
+            )
+        chunk = tile_cache[spindex]
+        y = (index / 4) * 4
+        x = (index % 4) * 4
+        image.paste(chunk, (x, y))
+
+    return image
+
 def first_adapter(qs):
     def _first_adapter(qs):
         return qs[0]
@@ -134,20 +152,10 @@ def app(environ, start_response):
         size = [int(x) for x in qs.get('size', '16,16')[0].split(',')]
         depth = int(qs.get('depth', [2])[0])
         offset = int(qs.get('aoffset')[0])
+        is_map = bool(int(qs.get('is_map')[0]))
 
 
         image = get_sprite(offset, size, bpp=depth)
-
-        """
-        if depth == 1:
-            data = game.rom[offset:offset + 8]
-            image = image8x8_from_bitmap1(data)
-        else:
-            if size == 16:
-                image = get16x16(offset)
-            elif size == 8:
-                image = fromaddr(offset)
-        """
 
         io = StringIO()
         io.seek(0)

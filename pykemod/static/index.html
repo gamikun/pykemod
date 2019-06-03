@@ -27,11 +27,15 @@
 <body ng-app="pykemod" ng-controller="main">
 
 <div class="row sprite-list">
-    <div class="col-md-2 sprite" ng-repeat="sprite in sprites">
+    <div class="col-md-2 sprite" ng-repeat="(index, sprite) in sprites">
         <div class="card-body">
             <img ng-src="{{sprite.url}}"
                 width="64" height="64">
-            <p>{{ sprite.offset }}</p>
+            <p>
+                {{ sprite.offset }}<br />
+                RID: {{ index + 1 }}
+                ({{ '0x' + (index + 1).toString(16).toUpperCase() }})
+            </p>
         </div>
     </div>
 </div>
@@ -53,14 +57,14 @@
 // CHARACTERS 16x16: 0x14000
 // MAP TILES   8x8 : 0x64010
 
-var SPRITES_OFFSET = 0x1C98A;
+var SPRITES_OFFSET = 0x64010;
 var app = angular.module('pykemod', []);
 
 // 1 = 1bpp
 // 2 = 2bpp (planar)
 var depth = 2;
-var width = 16;
-var height = 16;
+var width = 8;
+var height = 8;
 //  8 -  8x8  - 1bpp
 // 16 -  8x8  - 2bpp - planar
 // 64 - 16x16 - 2bpp - planar
@@ -71,7 +75,7 @@ app.controller('main', function($scope, $http) {
     var sprites = [];
 
     // Prepare sprites to be shown
-    for (var index = 0; index < 225; index++) {
+    for (var index = 0; index < 128; index++) {
         var offset = SPRITES_OFFSET + step * index;
         sprites.push({
             url: '/sprite?aoffset=' + offset.toString() + '&depth=' + depth + '&size=' + finalSize,

@@ -112,6 +112,9 @@ def maprom(game):
     fill_range(data, 0x0A2A37, 0x0A4001, color=empty)
     fill_range(data, 0x0B060F, 0x100000, color=empty)
 
+    # PKMN WILD
+    fill_range(data, game.WILD_OFFSET, 0x00D5C6, color=(0x99, 0, 0x99))
+
     # print('UNTIL ROUTE NAMES: {}'.format(game.evos_upper_limit))
 
     im = Image.frombytes('RGB', (1024, 1024), data)

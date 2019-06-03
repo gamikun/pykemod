@@ -1,3 +1,6 @@
+from __future__ import division
+
+
 class Pokemon(object):
     __slots__ = [
         'id', 'evolutions', 'learns', 'name',
@@ -35,3 +38,31 @@ class Evolution(object):
     INTERCHANGE = 3
 
     __slots__ = ['type', 'into_id', 'level', 'stone_id']
+
+
+class WildData(object):
+    __slots__ = ['choices', 'chances', 'offset', 'rate']
+
+    def __init__(self, offset=None, rate=0):
+        self.chances = {}
+        self.choices = []
+        self.offset = offset
+        self.rate = rate
+
+    def feed(self, lvl, pkmn_id):
+        t = lvl, pkmn_id
+        self.choices.append(t)
+
+    def calculate_chances(self):
+        choiset = set(self.choices)
+        chances = {}
+        total = len(self.choices)
+
+        for choice in choiset:
+            chances[choice] = self.choices.count(choice)
+
+        for key in chances:
+            chances[key] /= total
+
+        self.chances = chances
+        return self.chances
