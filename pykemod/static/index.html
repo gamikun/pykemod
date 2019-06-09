@@ -4,7 +4,7 @@
 <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
 <style type="text/css">
     body {
-        background: #ddd;
+        background: #ccc;
     }
     img {
         image-rendering: optimizeSpeed;
@@ -15,7 +15,17 @@
         min-height: 128px;
         text-align: center;
     }
+    .sprite-list .map {
+        width: auto;
+    }
+    .sprite-list .map img {
+        width: auto;
+    }
     .sprite-list .sprite img {
+        margin-top: 32px;
+        width: 64px;
+    }
+    .sprite-list .map img {
         margin-top: 32px;
     }
     .sprite-list .sprite p {
@@ -26,15 +36,20 @@
 </head>
 <body ng-app="pykemod" ng-controller="main">
 
+<div style="text-align: center; padding: 24px   ">
+    <button ng-click="loadMapSprites()">Map sprites</button>
+    <button ng-click="loadMapTiles()">Map tiles</button>
+    <button ng-click="loadMaps()">Maps</button>
+</div>
+
 <div class="row sprite-list">
-    <div class="col-md-2 sprite" ng-repeat="(index, sprite) in sprites">
+    <div ng-class="['col-md-2', isMap ? 'map' : 'sprite']" ng-repeat="(index, sprite) in sprites">
         <div class="card-body">
-            <img ng-src="{{sprite.url}}"
-                width="64" height="64">
+            <img ng-src="{{sprite.url}}">
             <p>
                 {{ sprite.offset }}<br />
-                RID: {{ index + 1 }}
-                ({{ '0x' + (index + 1).toString(16).toUpperCase() }})
+                RID: {{ index + (isMapTile ? 0 : 1) }}
+                ({{ '0x' + (index + (isMapTile ? 0 : 1)).toString(16).toUpperCase() }})
             </p>
         </div>
     </div>
@@ -55,9 +70,13 @@
 // MAP PARTS   8x8 : 0x11E80
 // KANTO TILEs 8x8 : 0x124b8
 // CHARACTERS 16x16: 0x14000
+// 
 // MAP TILES   8x8 : 0x64010
+// MAP TILES 16x16: 0x0645E0
+// 
+// MAP: 99040
 
-var SPRITES_OFFSET = 0x64010;
+var SPRITES_OFFSET = 99067 //99040;
 var app = angular.module('pykemod', []);
 
 // 1 = 1bpp
@@ -68,22 +87,77 @@ var height = 8;
 //  8 -  8x8  - 1bpp
 // 16 -  8x8  - 2bpp - planar
 // 64 - 16x16 - 2bpp - planar
-var step = (width * height * depth) / 8;
+var isMapTile = false
+var isMap = true
+var step = 91;
 var finalSize = width + ',' + height;
+
+// PALLET TOWN: 0x0182FB
 
 app.controller('main', function($scope, $http) {
     var sprites = [];
 
     // Prepare sprites to be shown
-    for (var index = 0; index < 128; index++) {
+    for (var index = 0; index < 2; index++) {
         var offset = SPRITES_OFFSET + step * index;
         sprites.push({
-            url: '/sprite?aoffset=' + offset.toString() + '&depth=' + depth + '&size=' + finalSize,
+            url: '/sprite?aoffset=' + offset.toString()
+                + '&depth=' + depth + '&size=' + finalSize
+                + '&is_map_tile=' + (isMapTile ? '1' : '0')
+                + '&is_map=' + (isMap ? '1' : '0')
+            ,
             offset: '0x' + offset.toString('16')
         })
     }
 
+    $scope.isMap = true
+    $scope.isMapTile = isMapTile;
     $scope.sprites = sprites;
+
+    $scope.loadMapTiles = function() {
+        var base_offset = 0x0645E0;
+        var sprites = [];
+        var step = (width * height * depth) / 8;
+        // Prepare sprites to be shown
+        for (var index = 0; index < 128; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=1&is_map=0'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = true;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
+
+    $scope.loadMapSprites = function() {
+        var depth = 2;
+        var width = 8;
+        var height = 8;
+        var base_offset = 0x64010;
+        var step = (width * height * depth) / 8;
+        var finalSize = width + ',' + height;
+        var sprites = [];
+
+        // Prepare sprites to be shown
+        for (var index = 0; index < 128; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=0&is_map=0'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = false;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
 });
 
 </script>

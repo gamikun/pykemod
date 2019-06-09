@@ -40,6 +40,9 @@ def maprom(game):
     # Map tiles
     fill_range(data, 0x64190, 0x64550, color=(0, 0, 255))
 
+    # Map tiles tiles
+    fill_range(data, 0x0645E0, 0x064DE1, color=(192, 64, 15))
+
     # Route pokemons
     fill_range(data,
         game.ROUTE_NAMES_OFFSET,
@@ -111,6 +114,9 @@ def maprom(game):
     fill_range(data, 0x0A6B94, 0x0A8001, color=empty)
     fill_range(data, 0x0A2A37, 0x0A4001, color=empty)
     fill_range(data, 0x0B060F, 0x100000, color=empty)
+
+    # PALLET TOWN
+    fill_range(data, 0x0182FB, 0x18355)
 
     # PKMN WILD
     fill_range(data, game.WILD_OFFSET, 0x00D5C6, color=(0x99, 0, 0x99))

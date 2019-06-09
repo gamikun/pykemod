@@ -9,6 +9,7 @@ from pykemod.graphics import image16_from_raw, \
 from binascii import hexlify
 from StringIO import StringIO
 from PIL import Image
+from struct import unpack
 import json
 
 html_templete = """
@@ -31,25 +32,33 @@ palettes = [
         (0x00, 0x00, 0x00, 0xFF)
     ],
     [ # 2bpp
-        #(0x00,0x00,0x00,0x00),
-        (0xff, 0x00, 0xff, 0xff),
-        (0xff,0xff,0xff,0xff),
-        (0x99,0x99,0x99,0xff),
-        (0x00,0x00,0x00,0xff),
+        (0xff,0xff,0xff,0xff), # blanco
+        (0x00,0x00,0x00,0x00), # transparent
+        (0x99,0x99,0x99,0xff), # gris
+        (0x00,0x00,0x00,0xff), # negro
     ]
 ]
 
-tile_cache = [None] * 128
+default_palette = [
+    (0xff,0xff,0xff,0xff), # blanco
+    (0x00,0x00,0x00,0x00), # transparent
+    (0x99,0x99,0x99,0xff), # gris
+    (0x00,0x00,0x00,0xff), # negro
+]
+
+tile_cache = [None] * 129
 
 
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
     game = Game(fp.read())
 
-def fromaddr(addr, do_print=False, bpp=2):
+def fromaddr(addr, do_print=False, bpp=2, palette=None):
     ar = []
     length = (64 * bpp) / 8
     tile = game.rom[addr:addr + length] 
-    palette = palettes[bpp - 1]
+
+    if palette is None:
+        palette = palettes[bpp - 1]
 
     for y in range(8):
         low = ord(tile[y * bpp])
@@ -80,7 +89,7 @@ def get16x16(addr, scale=1):
 
     return image
 
-def get_sprite(addr, size, bpp=2):
+def get_sprite(addr, size, bpp=2, palette=None):
     """ TODO: put in graphics submodule """
     w, h = size
     sw, sh = w / 8, h / 8
@@ -93,25 +102,58 @@ def get_sprite(addr, size, bpp=2):
         y = (index / sw) * 8
         x = (index % sw) * 8
         offset = addr + index * segment_length
-        segment = fromaddr(offset, bpp=bpp)
+        segment = fromaddr(offset, bpp=bpp, palette=palette)
         sprite.paste(segment, (x, y))
 
     return sprite
 
-def get_map_tile(addr):
+def get_map_tile(addr, palette=None):
     image = Image.new('RGBA', (32, 32))
     data = game.rom[addr:addr + 16]
     for index, spid in enumerate(data):
-        spindex = spid - 1
+        spindex = ord(spid) - 1
         if not tile_cache[spindex]:
             tile_cache[spindex] = get_sprite(
                 game.MAP_SPRITES_OFFSET + 16 * spindex,
                 (8, 8),
+                palette=palette,
             )
         chunk = tile_cache[spindex]
-        y = (index / 4) * 4
-        x = (index % 4) * 4
+        y = (index / 4) * 8
+        x = (index % 4) * 8
         image.paste(chunk, (x, y))
+
+    return image
+
+def get_map_image(addr, palette=None):
+    # 38 39 01 01 38 39 01 4D
+    w = ord(game.rom[addr]) - 1
+    h = ord(game.rom[addr + 1])
+    w, h = 10, 9
+    image = Image.new('RGBA', (w * 32, h * 32),
+        color=(0x00, 0x99, 0x00, 0xff)
+    )
+    offset = addr + 2
+    n = w * h
+
+    # print('w: {}, h: {}, n: {}'.format(w, h, n))
+
+    for index in range(w * h):
+        tile_id = ord(game.rom[offset + index])
+
+        tile = get_map_tile(game.MAP_TILES_OFFSET + tile_id * 16,
+            palette=palette
+        )
+        y = (index / w) * 32
+        x = (index % w) * 32
+        image.paste(tile, (x, y))
+        
+        """
+        print('index: {}, tile id: 0x{:02X}, x: {}, y: {}'.format(
+            index, tile_id,
+            x, y
+        ))
+        """
 
     return image
 
@@ -152,10 +194,20 @@ def app(environ, start_response):
         size = [int(x) for x in qs.get('size', '16,16')[0].split(',')]
         depth = int(qs.get('depth', [2])[0])
         offset = int(qs.get('aoffset')[0])
+        is_map_tile = bool(int(qs.get('is_map_tile')[0]))
         is_map = bool(int(qs.get('is_map')[0]))
 
-
-        image = get_sprite(offset, size, bpp=depth)
+        if is_map:
+            image = get_map_image(offset, palette=[
+                (0xff,0xff,0xff,0xff), # blanco
+                (181,131,174,0xff), # transparent
+                (0x00,0x99,0x99,0xff), # gris
+                (0x00,0x00,0x00,0xff), # negro
+            ])
+        elif is_map_tile:
+            image = get_map_tile(offset)
+        else:
+            image = get_sprite(offset, size, bpp=depth)
 
         io = StringIO()
         io.seek(0)
