@@ -144,6 +144,8 @@ class Game:
         self.moves = moves
         self.move_names_upper_limit = offset
 
+        return self.moves
+
     def parse_wild(self, offset=WILD_OFFSET):
         choices = []
         total_items = 61

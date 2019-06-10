@@ -38,3 +38,8 @@ elif sys.argv[1] == 'wild' and sys.argv[2] == 'list':
         else:
             print('\nBLOCK {}: EMPTY\n{}'.format(index + 1, '-' * 35))
 
+elif sys.argv[1] == 'moves' and sys.argv[2] == 'list':
+    filename = env.get('PKMN_FILE', 'pykemod/Pokemon Red.gb')
+    game = open_game(filename)
+    for index, move in enumerate(game.parse_moves()):
+        print("0x{:02X} {}".format(index + 1, move))
