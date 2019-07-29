@@ -38,20 +38,30 @@
 
 <div style="text-align: center; padding: 24px   ">
     <button ng-click="loadMapSprites()">Map sprites</button>
-    <button ng-click="loadMapTiles()">Map tiles</button>
+    <!--<button ng-click="loadMapTiles()">Map tiles</button>-->
     <button ng-click="loadMaps()">Maps</button>
 </div>
 
 <div class="row sprite-list">
     <div ng-class="['col-md-2', isMap ? 'map' : 'sprite']" ng-repeat="(index, sprite) in sprites">
         <div class="card-body">
-            <img ng-src="{{sprite.url}}">
+            <img ng-src="{{sprite.url}}" style="width: 32px">
             <p>
                 {{ sprite.offset }}<br />
                 RID: {{ index + (isMapTile ? 0 : 1) }}
                 ({{ '0x' + (index + (isMapTile ? 0 : 1)).toString(16).toUpperCase() }})
             </p>
         </div>
+    </div>
+</div>
+
+PKMN LIST
+<div id="pokemon-names" style="padding: 32px;">
+    <div data-ng-repeat="pokemon in pokemons">
+        <img ng-src="/char.png?c={{c - 127}}"
+             style="width: 16px; margin-top: 16px"
+             ng-repeat="c in pokemon.name track by $index">
+        <button type="button">Editar</button>
     </div>
 </div>
 
@@ -76,20 +86,20 @@
 // 
 // MAP: 99040
 
-var SPRITES_OFFSET = 99067 //99040;
+var SPRITES_OFFSET = 0x011A80//99040;
 var app = angular.module('pykemod', []);
 
 // 1 = 1bpp
 // 2 = 2bpp (planar)
-var depth = 2;
+var depth = 1;
 var width = 8;
 var height = 8;
 //  8 -  8x8  - 1bpp
 // 16 -  8x8  - 2bpp - planar
 // 64 - 16x16 - 2bpp - planar
 var isMapTile = false
-var isMap = true
-var step = 91;
+var isMap = false
+var step = 8;
 var finalSize = width + ',' + height;
 
 // PALLET TOWN: 0x0182FB
@@ -98,7 +108,7 @@ app.controller('main', function($scope, $http) {
     var sprites = [];
 
     // Prepare sprites to be shown
-    for (var index = 0; index < 2; index++) {
+    for (var index = 0; index < 128; index++) {
         var offset = SPRITES_OFFSET + step * index;
         sprites.push({
             url: '/sprite?aoffset=' + offset.toString()
@@ -158,6 +168,17 @@ app.controller('main', function($scope, $http) {
         $scope.isMap = false;
         $scope.sprites = sprites;
     }
+
+    $scope.loadPokemons = function() {
+        fetch('/pokemons.json').then(function(response) {
+            return response.json();
+        }).then(function(response) {
+            console.log(response);
+            $scope.$apply(function() {
+                $scope.pokemons = response;
+            });
+        });
+    }();
 });
 
 </script>

@@ -1,15 +1,20 @@
 from __future__ import absolute_import
 from os.path import join, dirname
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from urlparse import parse_qs
 from pykemod.game import Game
 from pykemod.graphics import image16_from_raw, \
                              image8_from_raw, \
                              image8x8_from_bitmap1
+from wsgiref.handlers import format_date_time
+import email.utils as eut
 from binascii import hexlify
 from StringIO import StringIO
 from PIL import Image
 from struct import unpack
+from io import BytesIO
+from datetime import datetime
+import time
 import json
 
 html_templete = """
@@ -45,9 +50,11 @@ default_palette = [
     (0x99,0x99,0x99,0xff), # gris
     (0x00,0x00,0x00,0xff), # negro
 ]
-
 tile_cache = [None] * 129
 
+class state:
+    charmap = None
+    last_modified = None
 
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
     game = Game(fp.read())
@@ -75,6 +82,15 @@ def fromaddr(addr, do_print=False, bpp=2, palette=None):
     image.putdata(ar)
 
     return image
+
+def get_charmap():
+    charmap = []
+    offset = game.CHARACTERS_OFFSET
+    for index in range(256):
+        achar = get_sprite(offset, (8, 8), bpp=1)
+        charmap.append(achar)
+        offset += 8
+    return charmap
 
 def get16x16(addr, scale=1):
     image = Image.new('RGBA', (16, 16))
@@ -186,6 +202,47 @@ def app(environ, start_response):
         return [
             html_templete.format(content='')
         ]
+
+    elif path == '/char.png':
+        qs = parse_qs(environ['QUERY_STRING'])
+        c = int(qs.get('c', ['0'])[0])
+        if_mod = environ.get('HTTP_IF_MODIFIED_SINCE', None)
+        now = time.time()
+
+        if if_mod and state.last_modified < now:
+            start_response('304 Not Modified', [])
+            return ['']
+            
+        if not state.charmap:
+            state.charmap = get_charmap()
+            state.last_modified = now
+
+        char = state.charmap[c - 1]
+        with BytesIO() as output:
+            char.save(output, format="PNG")
+            start_response('200 OK', [
+                ('Content-Type', 'image/png'),
+                ('Cache-Control', 'public'),
+                ('Last-Modified', format_date_time(state.last_modified)),
+            ])
+            return [output.getvalue()]
+
+    elif path == '/pokemons.json':
+        qs = parse_qs(environ['QUERY_STRING'])
+
+        if not game.pokemons:
+            game.parse_pokemons(decode_text=False)
+
+        data = []
+        for pokemon in game.pokemons:
+            pkmn = {}
+            data.append({
+                "id": pokemon.id,
+                "name": [ord(n) for n in pokemon.name],
+                "description": [ord(n) for n in pokemon.description]
+            })
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        return [json.dumps(data)]
 
     elif path == '/sprite':
         qs = parse_qs(environ['QUERY_STRING'])

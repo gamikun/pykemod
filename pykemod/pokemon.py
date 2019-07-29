@@ -10,7 +10,7 @@ class Pokemon(object):
     def __init__(self, **k):
         self.evolutions = k.get('evolutions', [])
         self.id = k.get('id', None)
-        self.learns = k.get('learns', []),
+        self.learns = k.get('learns', [])
         self.name = k.get('name', None)
         self.description = k.get('description', None)
 

@@ -24,6 +24,7 @@ class Game:
     WILD_OFFSET_D = 0x00D3FC
     MAP_SPRITES_OFFSET = 0x64010
     MAP_TILES_OFFSET = 0x0645E0
+    CHARACTERS_OFFSET = 0x011A80
 
     decode_map = [
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 0
@@ -85,7 +86,7 @@ class Game:
         if pkmn == 0xB0:
             self.rom[offset]
 
-    def parse_pokemons(self):
+    def parse_pokemons(self, decode_text=True):
         from binascii import hexlify
         pkmns = []
         desc_offset = self.PKMN_DESCRIPTIONS_OFFSET
@@ -96,14 +97,16 @@ class Game:
             raw = self.rom[offset:offset + 10]
             pkmn = Pokemon(
                 id=index + 1,
-                name=self.decode_text(raw),
+                name=self.decode_text(raw)\
+                     if decode_text else raw,
             )
 
             # Description
             desc_end = self.rom.index(b'\x00', desc_offset)
             if desc_end != -1:
                 raw = self.rom[desc_offset:desc_end]
-                pkmn.description = self.decode_text(raw)
+                pkmn.description = self.decode_text(raw)\
+                    if decode_text else raw
                 desc_offset = desc_end + 1
 
             pkmns.append(pkmn)
