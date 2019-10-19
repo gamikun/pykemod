@@ -98,7 +98,7 @@ class Game:
             pkmn = Pokemon(
                 id=index + 1,
                 name=self.decode_text(raw)\
-                     if decode_text else raw,
+                     if decode_text else self.cleanup_text(raw),
             )
 
             # Description
@@ -132,14 +132,17 @@ class Game:
         else:
             return None, offset
 
-    def parse_moves(self):
+    def parse_moves(self, decode_text=True):
         moves = []
         index = 0
         offset = self.MOVES_OFFSET
 
         while index < self.TOTAL_MOVES:
             eos = self.rom.find(b'\x50', offset)
-            move_name = self.decode_text(self.rom[offset:eos])
+            if decode_text:
+                move_name = self.decode_text(self.rom[offset:eos])
+            else:
+                move_name = self.cleanup_text(self.rom[offset:eos])
             moves.append(move_name)
             offset = eos + 1
             index += 1
@@ -199,6 +202,12 @@ class Game:
                     chars.append('[{:02X}]'.format(ord(c)))
                     
         return ''.join(chars)
+
+    def cleanup_text(self, text):
+        index_end = text.find(b'\x50')
+        if index_end != -1:
+            return text[:index_end]
+        return text
 
     def parse_route_names(self):
         offset = self.ROUTE_NAMES_OFFSET
@@ -330,7 +339,7 @@ if __name__ == '__main__':
     print(game.decode_text(unhexlify('EA3ECD3E')))
     dialogs = game.parse_string_table(0x054001)
     for index, dialog in enumerate(dialogs):
-        #print("{:02X} {}".format(index, dialog))
+        print("{:02X} {}".format(index, dialog))
         pass
 
     print('\nPOKEMONS\n-----------')
