@@ -6,6 +6,7 @@ from pykemod.game import Game
 from pykemod.graphics import image16_from_raw, \
                              image8_from_raw, \
                              image8x8_from_bitmap1
+from pykemod.pokemon import Pokemon
 from wsgiref.handlers import format_date_time
 import email.utils as eut
 from binascii import hexlify
@@ -55,6 +56,12 @@ tile_cache = [None] * 129
 class state:
     charmap = None
     last_modified = None
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(self, Pokemon):
+            return ['POKEMON']
+        return json.JSONEncoder.default(self, obj)
 
 with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
     game = Game(fp.read())
@@ -233,16 +240,61 @@ def app(environ, start_response):
         if not game.pokemons:
             game.parse_pokemons(decode_text=False)
 
+        game.parse_evolutions()
+
         data = []
         for pokemon in game.pokemons:
             pkmn = {}
             data.append({
                 "id": pokemon.id,
                 "name": [ord(n) for n in pokemon.name],
-                "description": [ord(n) for n in pokemon.description]
+                "description": [ord(n) for n in pokemon.description],
+                "evolutions": [{
+                    "into_id": e.into_id,
+                    "type": e.type,
+                    "level": e.level,
+                    "stone_id": e.stone_id
+                } for e in pokemon.evolutions],
+                "learns": [{
+                    "move_id": l.move_id,
+                    "level": l.level   
+                } for l in pokemon.learns]
             })
         start_response('200 OK', [('Content-Type', 'application/json')])
         return [json.dumps(data)]
+
+    elif path == '/moves.json':
+        moves = game.parse_moves(decode_text=False)
+
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        return [
+            json.dumps({
+                "moves": [[ord(t) for t in m] for m in moves]
+            })
+        ]
+
+    elif path == '/wild.json':
+        wild = game.parse_wild()
+
+        start_response('200 OK', [('Content-Type', 'application/json')])
+
+        return [
+            json.dumps({
+                "wild": [
+                    {
+                        "rate": w.rate,
+                        "offset": w.offset,
+                        "chances": [
+                            {
+                                "rate": v,
+                                "pkmn_id": k[1],
+                                "lvl": k[0]
+                            } for k, v in w.chances.items()
+                        ]
+                    } if w else None for w in wild
+                ]
+            })
+        ]
 
     elif path == '/sprite':
         qs = parse_qs(environ['QUERY_STRING'])
@@ -257,8 +309,8 @@ def app(environ, start_response):
         if is_map:
             image = get_map_image(offset, palette=[
                 (0xff,0xff,0xff,0xff), # blanco
-                (181,131,174,0xff), # transparent
-                (0x00,0x99,0x99,0xff), # gris
+                (0xC0,0xc0,0xC0,0xff), # gris
+                (0x90, 0x90, 0x90, 0xff),
                 (0x00,0x00,0x00,0xff), # negro
             ])
         elif is_map_tile:
