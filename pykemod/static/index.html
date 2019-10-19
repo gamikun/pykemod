@@ -5,10 +5,19 @@
 <style type="text/css">
     body {
         background: #ccc;
+        font-family: monospace;
     }
     img {
         image-rendering: optimizeSpeed;
         image-rendering: -webkit-optimize-contrast;
+    }
+    h5 {
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
+    .sprite-list {
+      padding: 32px;
+      flex: 1;
     }
     .sprite-list .sprite {
         width: 128px;
@@ -32,20 +41,139 @@
         font-size: 12px;
         margin-top: 8px;
     }
+    .pkmn {
+      padding: 16px 32px;
+    }
+    .pkmn:nth-child(2n) {
+      background: #f0f0f0;
+    }
+    .pkmn .evo {
+      line-height: 32px;
+      color: #555;
+    }
+    .pkmn .evo .name {
+      
+    }
+    .lvl {
+      padding: 4px 8px;
+      background: #ddd;
+      font-size: 11px;
+      margin-right: 4px;
+    }
+    .map img {
+      width: auto;
+    }
+    .sprite img {
+      width: 32px;
+    }
 </style>
 </head>
 <body ng-app="pykemod" ng-controller="main">
 
+PKMN LIST
+<!--
+<div id="pokemon-names" style="padding: 32px;">
+    <div data-ng-repeat="pokemon in pokemons" class="pkmn" ng-id="pkmn-{{pokemon.id}}">
+        <img ng-src="/char.png?c={{c - 127}}"
+             style="width: 16px; margin-top: 16px"
+             ng-repeat="c in pokemon.name track by $index">
+        <div ng-if="pokemon.evolutions && pokemon.evolutions.length > 0">
+          <h5>Evolutions</h5>
+          <ul>
+            <li data-ng-repeat="evolution in pokemon.evolutions" class="evo">
+              <span class="name">
+                <a ng-href="#pkmn-{{evolution.into_id}}">
+                  <img ng-src="/char.png?c={{c - 127}}"
+                     style="width: 12px;"
+                     ng-repeat="c in pokemons[evolution.into_id - 1].name track by $index">
+                </a>
+              </span>
+              <span ng-if="evolution.type === 1">
+                &nbsp;at level {{ evolution.level }}
+              </span>
+              <span ng-if="evolution.type === 2">
+                &nbsp;using {{ evolution.stone_id }}
+              </span>
+              <span ng-if="evolution.type === 3">
+                &nbsp;interchanging.
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <div ng-if="pokemon.learns && pokemon.learns.length > 0">
+          <h5>Learned Moves</h5>
+          <ul>
+            <li data-ng-repeat="learn in pokemon.learns" class="learn">
+              <img ng-src="/char.png?c={{c - 127}}"
+                     style="width: 12px;"
+                     ng-repeat="c in moves[learn.move_id - 1] track by $index">
+              at level {{ learn.level }}
+            </li>
+          </ul>
+        </div>
+    </div>
+</div>
+-->
+
+<div style="padding:32px;">
+  <h1>WILD DATA</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th style="padding: 16px">Index</th>
+        <th style="padding: 16px">Chance</th>
+        <th style="padding: 16px">Pokemons</th>
+        <th style="padding: 16px">Offset</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="w in wildData track by $index">
+        <td style="text-align: center">
+          {{ $index }}
+        </td>
+        <td style="text-align: center">{{ w ? w.rate + '%' : '' }}</td>
+        <td style="padding: 16px">
+          <ul ng-if="w">
+            <li ng-repeat="chance in w.chances track by $index">
+              {{ chance.rate * 100 | number:0}}% : 
+              <span class="lvl">LVL {{ chance.lvl }}</span>
+              <img ng-src="/char.png?c={{c - 127}}"
+                   style="width: 12px;"
+                   ng-repeat="c in pokemons[chance.pkmn_id - 1].name track by $index">
+            </li>
+          </ul>
+          <div ng-if="!w">
+            Empty space
+          </div>
+        </td>
+        <td style="text-align: center;">
+          <span ng-if="w">
+            0x{{ w.offset.toString(16).toUpperCase() }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
 <div style="text-align: center; padding: 24px   ">
     <button ng-click="loadMapSprites()">Map sprites</button>
-    <!--<button ng-click="loadMapTiles()">Map tiles</button>-->
-    <button ng-click="loadMaps()">Maps</button>
+    <button ng-click="loadMapTiles()">Map tiles</button>
+    <div style="border: 1px solid black; margin: 8px; padding: 8px">
+      <input ng-model="mapOffset" />
+      <button ng-click="loadMaps()">Maps</button>
+      
+    </div>
+    <button ng-click="loadEvolutions()">Load Evolutions</button>
+    <button ng-click="loadWild()">Load Wilf</button>
 </div>
 
 <div class="row sprite-list">
-    <div ng-class="['col-md-2', isMap ? 'map' : 'sprite']" ng-repeat="(index, sprite) in sprites">
+    <div ng-class="[isMap ? 'map' : 'sprite']" ng-repeat="(index, sprite) in sprites">
         <div class="card-body">
-            <img ng-src="{{sprite.url}}" style="width: 32px">
+            <img ng-src="{{sprite.url}}">
             <p>
                 {{ sprite.offset }}<br />
                 RID: {{ index + (isMapTile ? 0 : 1) }}
@@ -55,15 +183,7 @@
     </div>
 </div>
 
-PKMN LIST
-<div id="pokemon-names" style="padding: 32px;">
-    <div data-ng-repeat="pokemon in pokemons">
-        <img ng-src="/char.png?c={{c - 127}}"
-             style="width: 16px; margin-top: 16px"
-             ng-repeat="c in pokemon.name track by $index">
-        <button type="button">Editar</button>
-    </div>
-</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.10/angular.min.js"></script>
 
@@ -85,6 +205,8 @@ PKMN LIST
 // MAP TILES 16x16: 0x0645E0
 // 
 // MAP: 99040
+// PALLET TOWN: 0x0182FB
+// CHAR MAPS: 
 
 var SPRITES_OFFSET = 0x011A80//99040;
 var app = angular.module('pykemod', []);
@@ -108,7 +230,7 @@ app.controller('main', function($scope, $http) {
     var sprites = [];
 
     // Prepare sprites to be shown
-    for (var index = 0; index < 128; index++) {
+    /*for (var index = 0; index < 128; index++) {
         var offset = SPRITES_OFFSET + step * index;
         sprites.push({
             url: '/sprite?aoffset=' + offset.toString()
@@ -118,16 +240,46 @@ app.controller('main', function($scope, $http) {
             ,
             offset: '0x' + offset.toString('16')
         })
-    }
+    }*/
 
     $scope.isMap = true
     $scope.isMapTile = isMapTile;
     $scope.sprites = sprites;
+    $scope.mapOffsets = [
+      99067,//99067,//0x0182FB, // PALLET TOWN
+      0x01C154, // OVER PALLET TOWN
+      0x01C0FA, // ALMOST SAFRON
+      99302,
+      98978,
+    ]
+
+    $scope.loadMaps = function() {
+        var sprites = [];
+        // var step = (width * height * depth) / 8;
+        // Prepare sprites to be shown
+
+        $scope.mapOffsets.forEach((mapOffset, index) => {
+            var base_offset = parseInt(mapOffset);
+            var offset = base_offset;
+
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=0&is_map=1'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        })
+
+        $scope.isMapTile = false;
+        $scope.isMap = true;
+        $scope.sprites = sprites;
+    }();
 
     $scope.loadMapTiles = function() {
         var base_offset = 0x0645E0;
         var sprites = [];
-        var step = (width * height * depth) / 8;
+        var step = (width * height * depth) / 4;
         // Prepare sprites to be shown
         for (var index = 0; index < 128; index++) {
             var offset = base_offset + step * index;
@@ -169,15 +321,41 @@ app.controller('main', function($scope, $http) {
         $scope.sprites = sprites;
     }
 
+    $scope.loadEvolutions = function() {
+      fetch('/evolutions.json').then(function(response) {
+        return response.json();
+      });
+    }
+
+    $scope.loadWild = function() {
+      fetch('/wild.json').then(function(response) {
+        return response.json();
+      }).then(function(response) {
+        $scope.$apply(function() {
+          $scope.wildData = response.wild;
+        })
+      })
+    }
+
     $scope.loadPokemons = function() {
         fetch('/pokemons.json').then(function(response) {
             return response.json();
         }).then(function(response) {
-            console.log(response);
             $scope.$apply(function() {
                 $scope.pokemons = response;
             });
         });
+    }
+
+    $scope.loadMoves = function() {
+      fetch('/moves.json').then(function(response) {
+        return response.json();
+      }).then(function(response) {
+        $scope.$apply(function() {
+          $scope.moves = response.moves;
+          $scope.loadPokemons();
+        });
+      });
     }();
 });
 
