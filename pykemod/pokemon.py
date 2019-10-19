@@ -39,6 +39,12 @@ class Evolution(object):
 
     __slots__ = ['type', 'into_id', 'level', 'stone_id']
 
+    def __init__(self):
+        self.type = None
+        self.into_id = None
+        self.level = None
+        self.stone_id = None
+
 
 class WildData(object):
     __slots__ = ['choices', 'chances', 'offset', 'rate']
