@@ -118,6 +118,10 @@ def maprom(game):
     # PALLET TOWN
     fill_range(data, 0x0182FB, 0x18355)
 
+    # SOBRE PALLET TOWN
+    fill_range(data, 0x0182FB, 0x0182FB + 90)
+    fill_range(data, 0x01C0FA, 0x01C0FA + 90)
+
     # PKMN WILD
     fill_range(data, game.WILD_OFFSET, 0x00D5C6, color=(0x99, 0, 0x99))
 
