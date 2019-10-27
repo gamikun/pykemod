@@ -17,6 +17,9 @@
 0x014000-0x017840: CHARACTERES SPRITES (16x16) (225 sprites)
 0x017840-0x01C21E: ?????????
 0x0182FB-0x18355: PALLET TOWN
+0x18355: ????????
+0x01C0FA: MAS ARRIBA DE PALLET TOWN
+0x01C154: ARRIBA DE PALLET TOWN
 0x01C21E-0x01C98A: POKEMON NAMES
 0x01C98A-0x1D10E: ???????????
 0x01D203: INITIAL POKEMON LEVEL
@@ -26,6 +29,150 @@
 ...
 0x0645E0-0x064DE1: MAP TILES 8 x 8 sprites
 
+
+FE = 11 11 11 10
+1F = 00 01 11 11
+FC = 11 11 11 00
+
+# OFFSET: 98978
+09 HEIGHT
+0A WIDTH
+FD42 884F5B4E 0C0C92
+41 MAYBE THE DEFAULT SPRITE UPRIGHT ???????
+EB
+C6 PARECE OTOR HORIZONTE????
+0A0A 230009C8 206D50AB C70A0A
+
+# PALLET TOWN
+# 99013
+
+09 MAP HEIGHT
+0A MAP WIDTH
+
+FD42 POSICONES EN MEMORIA?
+
+88 4F <-- UBICACION GENERAL DE TEXTOS ?????
+
+5B <-- desaparece el cuadro dialogo de los leterros despues de salir de lab
+
+4E ????
+
+0C <-- falla cuando salgo de casas
+	- si lo cambio hacia abajo, el relleno de la parte inferior 
+	  se pone como ramas.
+
+0C <-- relleno de la parte de arriba, O MAPA DE ARRIBA
+
+92 <-- Offset de mapa de arriba?
+
+41 <--- Más relleno de arriba????
+
+EB <-- MASSS?
+
+C6 0A0A2300 09C8206D
+
+50
+AB
+C7
+
+0A 0A
+
+00 00
+
+F9 
+
+C6 ?????
+
+C3 <-- ?????
+42 <--- ???????
+0B <-- EMPTY SPACE TILE
+03 <-- ??????
+
+05 <-- red DOOR X
+05 <-- red DOOR Y
+00 <-- teleport to REGION
+25 <-- red DOOR IN, SUB REGION
+
+05 <-- BLUE DOOR X
+0D <-- blue DOOR Y
+00 <-- teleport to REGION
+27 <-- blue house DOOR IN, SUB REGION
+
+0B <-- OAK DOOR X
+0C <-- OAK DOOR Y
+01 <-- REGION
+28 <-- OAK LAB DOOR IN, SUB REGION
+	[24] CAVE????
+	[25] REd HOUSE
+	[26] ERROR (WRONG POSITION)???
+	[27] BLUE'S HOUSe
+	[28] OAK'S LAB
+	[35] ...
+	[C7] TEAM ROCKET...
+
+
+04 ??????
+
+0D <-- oak lab y
+0D <-- oak lab x
+04 <-- oak lab
+
+09 <-- TOWN MESSAGE Y
+07 <-- TOWN MESSAGE X
+05 <-- TOWN MESSAGE
+
+05 <-- red's house y
+03 <-- RED's house x
+06 <-- RED'S HOUSE MESSAGE
+
+05 <-- BLUE'S HOUSE Y
+0B <-- BLUES HOUSE X
+07 <-- BLUES HOUSE MESSAGE
+
+03 03 SPRITES ?????
+
+09 0C
+FFFF
+
+01 ??????
+0D <-- GIRL SPRITE
+0C ?????
+07 BLUE's HOUSE ?????
+
+FE <-- GIRL DIRECTION
+
+00 <-- ????
+02 <-- EFFECT OR MESSAGE OF GIRL
+	[00] [EMPTY AND WAITS]
+	[01] Wait, don't go tou
+	[02] I'm raising pokemon
+	[03] Technology is incredible...
+	[04] OAK RESEARCH LAB
+	[05] PALLET TOWN AWAITS
+	[06] RED's house
+	[07] Blue's house
+	[08] 2 ERROR
+	[09] 2 ERROR
+	[0A] WHAAAT???
+	[10] FLASHING!!!
+	[11] Come with me...
+
+2F <-- FAT DOWN SPRITE
+12 <-- FAT POSITION Y ????
+0F <-- FAT POSITION X ????
+FE <-- FAT DIRECTION
+
+C7 <-- RED HOUSE TELEPORT TO
+05 <-- RED HOUSE Y
+05 <-- RED HOUSE X
+
+1F <-- DOOR DIRECTION
+C7 <-- BLUES HOUSE TELEPORT TO
+05 <-- BLUES HOUSE Y
+0D <-- BLUES HOUSE X
+
+4F <-- LAB RETURN COORD Y
+C7 <-- LAB RETURN TO OUTSIDE
 
 
 # CHARMANDER
