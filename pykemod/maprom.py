@@ -118,9 +118,23 @@ def maprom(game):
     # PALLET TOWN
     fill_range(data, 0x0182FB, 0x18355)
 
-    # SOBRE PALLET TOWN
-    fill_range(data, 0x0182FB, 0x0182FB + 90)
-    fill_range(data, 0x01C0FA, 0x01C0FA + 90)
+    # VIRIDIAN CITY
+    fill_range(data, 0x0183ea, 0x0183ea + 20 * 18)
+
+    # PEWER CITY
+    fill_range(data, 0x0185e4, 0x0185e4 + 20 * 18)
+
+    # CERULEAN CITY
+    fill_range(data, 0x01882e, 0x01882e + 20 * 18)
+
+    # LAVENDER TOWN
+    fill_range(data, 0x018a3d, 0x018a3d + 20 * 18)
+
+    # VERMILION CITY
+    fill_range(data, 0x018c84, 0x018c84 + 20 * 18)
+
+    # ROUTE 1
+    fill_range(data, 0x01C0FA, 0x01C0FA + 10 * 18)
 
     # PKMN WILD
     fill_range(data, game.WILD_OFFSET, 0x00D5C6, color=(0x99, 0, 0x99))

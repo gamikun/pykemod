@@ -43,3 +43,10 @@ elif sys.argv[1] == 'moves' and sys.argv[2] == 'list':
     game = open_game(filename)
     for index, move in enumerate(game.parse_moves()):
         print("0x{:02X} {}".format(index + 1, move))
+
+elif sys.argv[1] == 'places' and sys.argv[2] == 'list':
+    filename = env.get('PKMN_FILE', 'pykemod/Pokemon Red.gb')
+    game = open_game(filename)
+    names = game.parse_route_names()
+
+    print(names)

@@ -112,7 +112,7 @@ def get16x16(addr, scale=1):
 
     return image
 
-def get_sprite(addr, size, bpp=2, palette=None):
+def get_sprite(addr, size, bpp=2, palette=None, scale=1):
     """ TODO: put in graphics submodule """
     w, h = size
     sw, sh = w / 8, h / 8
@@ -127,6 +127,9 @@ def get_sprite(addr, size, bpp=2, palette=None):
         offset = addr + index * segment_length
         segment = fromaddr(offset, bpp=bpp, palette=palette)
         sprite.paste(segment, (x, y))
+
+    if scale > 1:
+        return sprite.resize((w * scale, h * scale))
 
     return sprite
 
@@ -148,18 +151,16 @@ def get_map_tile(addr, palette=None):
 
     return image
 
-def get_map_image(addr, palette=None):
+def get_map_image(addr, palette=None, size=(10, 9)):
     # 38 39 01 01 38 39 01 4D
     w = ord(game.rom[addr]) - 1
     h = ord(game.rom[addr + 1])
-    w, h = 10, 9
+    w, h = size
     image = Image.new('RGBA', (w * 32, h * 32),
         color=(0x00, 0x99, 0x00, 0xff)
     )
     offset = addr + 2
     n = w * h
-
-    # print('w: {}, h: {}, n: {}'.format(w, h, n))
 
     for index in range(w * h):
         tile_id = ord(game.rom[offset + index])
@@ -170,13 +171,6 @@ def get_map_image(addr, palette=None):
         y = (index / w) * 32
         x = (index % w) * 32
         image.paste(tile, (x, y))
-        
-        """
-        print('index: {}, tile id: 0x{:02X}, x: {}, y: {}'.format(
-            index, tile_id,
-            x, y
-        ))
-        """
 
     return image
 
@@ -273,6 +267,16 @@ def app(environ, start_response):
             })
         ]
 
+    elif path == '/places.json':
+        names = game.parse_places_names()
+
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        return [
+            json.dumps({
+                "names": [[ord(t) for t in m] for m in names]
+            })
+        ]
+
     elif path == '/wild.json':
         wild = game.parse_wild()
 
@@ -298,7 +302,7 @@ def app(environ, start_response):
 
     elif path == '/sprite':
         qs = parse_qs(environ['QUERY_STRING'])
-        scale = qs.get('scale', None)
+        scale = qs.get('scale', [1])[0]
         scale = int(scale) if scale else 1
         size = [int(x) for x in qs.get('size', '16,16')[0].split(',')]
         depth = int(qs.get('depth', [2])[0])
@@ -307,16 +311,20 @@ def app(environ, start_response):
         is_map = bool(int(qs.get('is_map')[0]))
 
         if is_map:
-            image = get_map_image(offset, palette=[
-                (0xff,0xff,0xff,0xff), # blanco
-                (0xC0,0xc0,0xC0,0xff), # gris
-                (0x90, 0x90, 0x90, 0xff),
-                (0x00,0x00,0x00,0xff), # negro
-            ])
+            size = [int(x) for x in qs.get('size', '10,9')[0].split(',')]
+            image = get_map_image(offset,
+                palette=[
+                    (0xff,0xff,0xff,0xff), # blanco
+                    (0xC0,0xc0,0xC0,0xff), # gris
+                    (0x90, 0x90, 0x90, 0xff),
+                    (0x00,0x00,0x00,0xff), # negro
+                ],
+                size=size
+            )
         elif is_map_tile:
             image = get_map_tile(offset)
         else:
-            image = get_sprite(offset, size, bpp=depth)
+            image = get_sprite(offset, size, bpp=depth, scale=scale)
 
         io = StringIO()
         io.seek(0)

@@ -34,29 +34,19 @@ FE = 11 11 11 10
 1F = 00 01 11 11
 FC = 11 11 11 00
 
-# OFFSET: 98978
-09 HEIGHT
-0A WIDTH
-FD42 884F5B4E 0C0C92
-41 MAYBE THE DEFAULT SPRITE UPRIGHT ???????
-EB
-C6 PARECE OTOR HORIZONTE????
-0A0A 230009C8 206D50AB C70A0A
+# PALLET TOWN (98978)
 
-# PALLET TOWN
-# 99013
+09: MAP HEIGHT
+0A: MAP WIDTH
 
-09 MAP HEIGHT
-0A MAP WIDTH
+FD 42 POSICONES EN MEMORIA?
 
-FD42 POSICONES EN MEMORIA?
-
-88 4F <-- UBICACION GENERAL DE TEXTOS ?????
-
-5B <-- desaparece el cuadro dialogo de los leterros despues de salir de lab
-
+## Varias ubicaciones
+88 4F: UBICACION GENERAL DE TEXTOS ?????
+5B: desaparece el cuadro dialogo de los leterros despues de salir de lab
 4E ????
 
+## Parte de arriba
 0C <-- falla cuando salgo de casas
 	- si lo cambio hacia abajo, el relleno de la parte inferior 
 	  se pone como ramas.
@@ -64,40 +54,59 @@ FD42 POSICONES EN MEMORIA?
 0C <-- relleno de la parte de arriba, O MAPA DE ARRIBA
 
 92 <-- Offset de mapa de arriba?
-
 41 <--- Más relleno de arriba????
+EB <-- MASSS RELLENO?
+C6 <-- ?????
 
-EB <-- MASSS?
 
-C6 0A0A2300 09C8206D
+0A <--- X DEL RELLENO DE LA PARTE SUPERIOR
+0A <--- X o ANCHO DEL MAPA DE ARRIBA
+23 <-- Conexión de arriba hacia abajo
+00
+09
+C8 <--- PARECE ALGO DE ARRIBA
 
-50
-AB
-C7
+20 <--- SIN EFECTO APARENTE
 
-0A 0A
+MAPA CONECTADO A LA PARTE INFERIOR (98999)
+------------------------------------------
+6D: ESPACIO DE MEMORIA DEL MAPA DE ABAJO
+50: MAPA DE ABAJO?
+AB: TAMBIEN AFECTA
+C7: RELLENO DE ABAJO
+0A: POSICION de X DONDE INICIA EL RELLENO
+0A: MAS DE X QUE NO ENTIENDO ????
 
-00 00
+## SEPARATOR (99005)
+00 00 
 
-F9 
+## 99007
 
+F9: ESPACIO DE MEMORIA????
 C6 ?????
 
-C3 <-- ?????
+C3: PARECE MAPA O POSICION DE LOS TILES???????
 42 <--- ???????
-0B <-- EMPTY SPACE TILE
-03 <-- ??????
 
-05 <-- red DOOR X
-05 <-- red DOOR Y
-00 <-- teleport to REGION
-25 <-- red DOOR IN, SUB REGION
+0B <-- EMPTY SPACE TILE (99011)
 
-05 <-- BLUE DOOR X
-0D <-- blue DOOR Y
-00 <-- teleport to REGION
-27 <-- blue house DOOR IN, SUB REGION
+## PORTALS (99013)
 
+03: Number of portals
+
+### Portal Red's house door
+05: red DOOR X
+05: red DOOR Y
+00: teleport to REGION
+25: red DOOR IN, SUB REGION
+
+### Portal Blue's house door
+05: BLUE DOOR X
+0D: blue DOOR Y
+00: teleport to REGION
+27: blue house DOOR IN, SUB REGION
+
+### Portal OAK's lab door
 0B <-- OAK DOOR X
 0C <-- OAK DOOR Y
 01 <-- REGION
@@ -110,40 +119,42 @@ C3 <-- ?????
 	[35] ...
 	[C7] TEAM ROCKET...
 
+## MESSAGES (99029) (3 bytes per message)
 
-04 ??????
+04: NUMBER OF MESSAGES
 
+### OAK's lab message
 0D <-- oak lab y
 0D <-- oak lab x
 04 <-- oak lab
 
+### Town messge
 09 <-- TOWN MESSAGE Y
 07 <-- TOWN MESSAGE X
 05 <-- TOWN MESSAGE
 
+### Red's house message
 05 <-- red's house y
 03 <-- RED's house x
 06 <-- RED'S HOUSE MESSAGE
 
+### Blue's house message
 05 <-- BLUE'S HOUSE Y
 0B <-- BLUES HOUSE X
 07 <-- BLUES HOUSE MESSAGE
 
-03 03 SPRITES ?????
+### NO EFFECT (99038)
+03 03 09 0C FF FF 01
 
-09 0C
-FFFF
+## MOVING CHARACTERS
 
-01 ??????
-0D <-- GIRL SPRITE
-0C ?????
-07 BLUE's HOUSE ?????
-
-FE <-- GIRL DIRECTION
-
-00 <-- ????
-02 <-- EFFECT OR MESSAGE OF GIRL
-	[00] [EMPTY AND WAITS]
+### GIRL SPRITES (99045)
+0D: SPRITE, UNKNOWN INDEX
+0C: Y
+07: X
+FE: BEHAVIOR
+00: ?
+02: EFFECT OR MESSAGE OF GIRL
 	[01] Wait, don't go tou
 	[02] I'm raising pokemon
 	[03] Technology is incredible...
@@ -154,25 +165,57 @@ FE <-- GIRL DIRECTION
 	[08] 2 ERROR
 	[09] 2 ERROR
 	[0A] WHAAAT???
+	[0B] PC 2 ERROR
 	[10] FLASHING!!!
 	[11] Come with me...
 
-2F <-- FAT DOWN SPRITE
-12 <-- FAT POSITION Y ????
-0F <-- FAT POSITION X ????
-FE <-- FAT DIRECTION
+### FAT SPRITE (99051)
+2F: FAT DOWN SPRITE
+12: Y
+0F: X
+FE: BEHAVIOR
+00
+03: MESSAGE
 
-C7 <-- RED HOUSE TELEPORT TO
-05 <-- RED HOUSE Y
-05 <-- RED HOUSE X
+## REVERSE PORTALS (99057) 
 
-1F <-- DOOR DIRECTION
-C7 <-- BLUES HOUSE TELEPORT TO
-05 <-- BLUES HOUSE Y
-0D <-- BLUES HOUSE X
+### PORTAL FROM RED'S HOUSE
+1B: POSITION
+	1: Y
+	B: X
+C7: TELEPORT TO
+05: Y
+05: X
 
-4F <-- LAB RETURN COORD Y
-C7 <-- LAB RETURN TO OUTSIDE
+"""
+SI:
+	0000 1101
+	0010 1111
+NO:
+	0001 1011
+	0001 1111
+"""
+
+### PORTAL FROM BLUE'S HOUSE
+1F: DOOR DIRECTION
+	1: Y
+	F: X
+C7: TELEPORT TO PALLET TOWN
+05: TELEPORT TO Y (half tile)
+0D: TELEPORT TO X (half tile)
+
+### OAK'S LAB (99065)
+4F: WHERE PORTAL IS
+	4: Y
+	F: X
+C7: TELEPOR TO PALLET TOWN
+0B: TELEPORT TO Y (HALF TILE)
+0C: TELEPORT TO X (HALF TILE)
+
+# MAP TILES = WIDTH * HEIGHT = N BYTES (99069)
+# ...
+
+#OFFSET: 99159
 
 
 # CHARMANDER

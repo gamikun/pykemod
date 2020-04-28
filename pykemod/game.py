@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from pykemod import graphics
 from pykemod.pokemon import Pokemon, Evolution, Learn, WildData
-from binascii import unhexlify
+from binascii import unhexlify, hexlify
 
 
 class Game:
@@ -231,6 +231,18 @@ class Game:
 
         self.routes_names_upper_limit = offset
 
+    def parse_places_names(self):
+        names = []
+
+        offset = self.ROUTE_NAMES_OFFSET
+
+        for _ in range(0, self.TOTAL_ROUTES):
+            end_offset = self.rom.index(b'\x50', offset)
+            names.append(self.rom[offset:end_offset])
+            offset = end_offset + 1
+
+        return names
+
     def parse_pokemon_descriptions(self):
         offset = self.PKMN_DESCRIPTIONS_OFFSET        
         texts = []
@@ -308,6 +320,84 @@ class Game:
             pkmn.learns = learns
             pkmn.evolutions = evolutions
             self.evos_upper_limit = offset
+
+    def parse_map_from(self, offset):
+        height = self.rom[offset]
+        width = self.rom[offset + 1]
+        portals = []
+        messages = []
+        tiles = []
+
+        offset += 2
+
+        offset_map_x = self.rom[offset]
+        offset_map_y = self.rom[offset + 1]
+        offset += 2
+
+        text_offsets = self.rom[offset:offset + 2]
+        offset += 2
+
+        other_offset = self.rom[offset:offset + 2]
+        offset += 3
+
+        up_map_id = self.rom[offset]
+        up_map_offset = self.rom[offset + 1]
+
+        offset += 2
+
+        algo_de_arriba = self.rom[offset]
+        relleno_arriba = self.rom[offset + 1]
+        offset_mapa_arriba = self.rom[offset + 2]
+        mas_relleno_arriba = self.rom[offset + 3]
+        mas_relleno_arriba_2 = self.rom[offset + 4]
+        que = self.rom[offset + 5]
+        offset += 5
+
+        # TODO: do not move to fixed offset, because for now
+        # i'm seeking to relative offset 34, where are portals.
+        offset = offset + 28
+
+        portal_counter = self.rom[offset]
+        offset += 1
+
+        for index in range(portal_counter):
+            portals.append((
+                self.rom[offset], # X
+                self.rom[offset + 1], # Y
+                self.rom[offset + 2], # SPAWN IN
+                self.rom[offset + 3], # MAP
+            ))
+            offset += 4
+
+        messages_counter = self.rom[offset]
+        offset += 1
+
+        for index in range(messages_counter):
+            messages.append((
+                self.rom[offset], # Y
+                self.rom[offset + 1], # X
+                self.rom[offset + 2], # MESSAGE ID
+            ))
+            offset += 3
+
+        # TODO: discover what is there in 99038
+        offset += 7
+        datalen = width * height
+
+        for index in range(datalen):
+            tiles.append(self.rom[offset])
+            offset += 1
+
+        print('SIZE: {}x{}'.format(width, height))
+        print('MAP OFFSET XY: 0x{:02x},0x{:02x}'.format(
+            offset_map_x, offset_map_y)
+        )
+        print('MAP UP OFFSET: {0} (0x{0:02x})'.format(up_map_offset))
+        print("MAP UP ID: {0} (0x{0:02x})".format(up_map_id))
+        print('TEXT OFFSET: {}'.format(hexlify(text_offsets)))
+        print("portals: \n{}\n".format(portals))
+        print("messages: \n{}\n".format(messages))
+        print("tiles: \n{}\n".format(tiles))
 
 def open_game(filename):
     with open(filename, 'rb') as fp:

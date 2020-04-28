@@ -157,6 +157,16 @@ PKMN LIST
   </table>
 </div>
 
+<div>
+    <h1>Places names</h1>
+    <div ng-repeat="(index, place) in placesNames">
+        {{index + 1}}
+        <img ng-src="/char.png?c={{c - 127}}"
+           style="width: 12px;"
+           ng-repeat="c in place track by $index">
+    </div>
+</div>
+
 
 <div style="text-align: center; padding: 24px   ">
     <button ng-click="loadMapSprites()">Map sprites</button>
@@ -168,6 +178,25 @@ PKMN LIST
     </div>
     <button ng-click="loadEvolutions()">Load Evolutions</button>
     <button ng-click="loadWild()">Load Wilf</button>
+    <button ng-click="loadCharacterSprites()">Load character sprites</button>
+    <button ng-click="loadPlaces()">Load places names</button>
+
+    <div>
+      <img ng-src="{{ discoverSource }}" style="width: 200px; height: 200px;">
+      <input type="range" ng-model="discoverOffset" style="width: 100%"
+        min="457604"
+        max="459604"
+        step="1"
+      >
+      <div>{{ discoverHex }} ({{ discoverOffset }})</div>
+      <button ng-click="startDiscovering()">Discover</button>
+    </div>
+
+    <div>
+      <h5>New Map from offset</h5>
+      <input ng-model="newMapOffset">
+      <button ng-click="loadMapFromOffset()">
+    </div>
 </div>
 
 <div class="row sprite-list">
@@ -242,15 +271,37 @@ app.controller('main', function($scope, $http) {
         })
     }*/
 
+    $scope.rangeMin = 0x6e390;
+    $scope.rangeMax = 1048576;
+
+    $scope.discoverTimeout = null;
+    $scope.discoverSource = "";
+    $scope.discoverOffset = 409616 //0x011A80;
+    $scope.discoverRun = false;
+
     $scope.isMap = true
     $scope.isMapTile = isMapTile;
     $scope.sprites = sprites;
     $scope.mapOffsets = [
-      99067,//99067,//0x0182FB, // PALLET TOWN
-      0x01C154, // OVER PALLET TOWN
-      0x01C0FA, // ALMOST SAFRON
-      99302,
-      98978,
+      [0x0182fb, [10,  9]], // PALLET TOWN
+      [0x0183ea, [20, 18]], // VIRIDIAN CITY
+      [0x0185e4, [20, 18]], // PEWER CITY
+      [0x01882e, [20, 18]], // CERULEAN CITY
+      [0x018a3d, [20, 18]], // LAVENDER TOWN
+      [0x018c84, [20, 18]], // VERMILION CITY
+
+      // [0x0190FA, [8, 4]], // CELADON CITY
+      // [0x018d10+ 180, [20, 5]], // ROUTE 1
+
+      [0x01C0FA, [10, 18]], // ROUTE 1
+      
+      
+
+      [0x191e4, [8, 8]], // ROUTE 1
+
+
+
+      // [0x01C0FA + 13430 + 60000, [8, 8]], // ROUTE 2
     ]
 
     $scope.loadMaps = function() {
@@ -259,12 +310,13 @@ app.controller('main', function($scope, $http) {
         // Prepare sprites to be shown
 
         $scope.mapOffsets.forEach((mapOffset, index) => {
-            var base_offset = parseInt(mapOffset);
+            var base_offset = parseInt(mapOffset[0]);
             var offset = base_offset;
+            var sz = mapOffset[1][0] + ',' + mapOffset[1][1];
 
             sprites.push({
                 url: '/sprite?aoffset=' + offset.toString()
-                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&depth=' + depth + '&size=' + sz
                     + '&is_map_tile=0&is_map=1'
                 ,
                 offset: '0x' + offset.toString('16')
@@ -274,7 +326,19 @@ app.controller('main', function($scope, $http) {
         $scope.isMapTile = false;
         $scope.isMap = true;
         $scope.sprites = sprites;
-    }();
+    };
+
+    $scope.loadMaps();
+
+    $scope.loadPlaces = function() {
+        fetch('/places.json').then(function(response) {
+            return response.json();
+        }).then(function(response) {
+            $scope.$apply(function() {
+                $scope.placesNames = response.names;
+            })
+        })
+    }
 
     $scope.loadMapTiles = function() {
         var base_offset = 0x0645E0;
@@ -321,6 +385,27 @@ app.controller('main', function($scope, $http) {
         $scope.sprites = sprites;
     }
 
+    $scope.loadCharacterSprites = function() {
+      var step = 64;
+      var sprites = [];
+      // var baseOffset = 0x010000;
+      var baseOffset = 0x014000;
+
+      for (var index = 0; index < 225; index++) {
+        var offset = baseOffset + step * index;
+        sprites.push({
+              url: '/sprite?aoffset=' + offset.toString()
+                  + '&depth=2&size=16,16'
+                  + '&is_map_tile=0&is_map=0'
+              ,
+              offset: '0x' + offset.toString('16')
+          })
+      }
+      $scope.isMapTile = false;
+      $scope.isMap = false;
+      $scope.sprites = sprites;
+    }
+
     $scope.loadEvolutions = function() {
       fetch('/evolutions.json').then(function(response) {
         return response.json();
@@ -357,6 +442,65 @@ app.controller('main', function($scope, $http) {
         });
       });
     }();
+
+    $scope.loadOthers = function() {
+      var baseOffset = 0x6e390; // St Anne
+      var limit = 75;
+
+      baseOffset = 0x6ed30; limit = 90;
+      baseOffset = 0x6f6b0; limit = 72;
+      baseOffset = 0x76ff1; limit = 100;
+
+      var others = [];
+      var depth = 2;
+      var width = 8;
+      var height = 8;
+      var finalSize = width + ',' + height;
+      var step = (width * height * depth) / 8;
+
+      for (var index = 0; index < limit; index++) {
+        var offset = baseOffset + index * step;
+
+        others.push({
+          url: '/sprite?aoffset=' + offset.toString()
+              + '&depth=' + depth + '&size=' + finalSize
+              + '&is_map_tile=0&is_map=0&scale=5'
+          ,
+          offset: '0x' + offset.toString('16')
+        });
+      }
+
+      $scope.sprites = others;
+    }
+
+    // $scope.loadOthers();
+
+    $scope.loadMapFromOffset = function() {
+      var parts = $scope.newMapOffset.split(',');
+      $scope.mapOffsets.push([
+        parseInt(parts[0]),
+        parseInt(parts[1]),
+        parseInt(parts[2])
+      ]);
+      $scope.loadMaps();
+    }
+
+    $scope.$watch('discoverOffset', function() {
+      var others = [];
+      var depth = 2;
+      var width = 8;
+      var height = 8;
+      var finalSize = width + ',' + height;
+      var step = (width * height * depth) / 8;
+
+      $scope.discoverHex = '0x' + $scope.discoverOffset.toString('16');
+      $scope.discoverSource = '/sprite?aoffset='
+          + $scope.discoverOffset.toString() + '&'
+          + 'is_map=0&'
+          + 'is_map_tile=0&'
+          + 'size='+finalSize+'&'
+          + 'depth=' + depth;
+    });
 });
 
 </script>
