@@ -287,18 +287,18 @@ class Game:
 
             while offset < end_offset:
                 evo = Evolution()
-                evo.type = ord(self.rom[offset])
+                evo.type = self.rom[offset]
 
                 if evo.type == Evolution.LEVEL:
-                    evo.level = ord(self.rom[offset + 1])
-                    evo.into_id = ord(self.rom[offset + 2])
+                    evo.level = self.rom[offset + 1]
+                    evo.into_id = self.rom[offset + 2]
                     offset += 3
                 elif evo.type == Evolution.STONE:
-                    evo.stone_id = ord(self.rom[offset + 1])
-                    evo.into_id = ord(self.rom[offset + 3])
+                    evo.stone_id = self.rom[offset + 1]
+                    evo.into_id = self.rom[offset + 3]
                     offset += 4
                 elif evo.type == Evolution.INTERCHANGE:
-                    evo.into_id = ord(self.rom[offset + 2])
+                    evo.into_id = self.rom[offset + 2]
                     offset += 3
 
                 evolutions.append(evo)
@@ -310,8 +310,8 @@ class Game:
 
             while offset < end_offset:
                 learn = Learn()
-                learn.level = ord(self.rom[offset])
-                learn.move_id = ord(self.rom[offset + 1])
+                learn.level = self.rom[offset]
+                learn.move_id = self.rom[offset + 1]
                 learns.append(learn)
                 offset += 2
 

@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 from os.path import join, dirname
 from base64 import b64decode, b64encode
-from urlparse import parse_qs
+from urllib.parse import parse_qs
+
 from pykemod.game import Game
 from pykemod.graphics import image16_from_raw, \
                              image8_from_raw, \
@@ -10,10 +11,9 @@ from pykemod.pokemon import Pokemon
 from wsgiref.handlers import format_date_time
 import email.utils as eut
 from binascii import hexlify
-from StringIO import StringIO
+from io import BytesIO
 from PIL import Image
 from struct import unpack
-from io import BytesIO
 from datetime import datetime
 import time
 import json
@@ -39,7 +39,7 @@ palettes = [
     ],
     [ # 2bpp
         (0xff,0xff,0xff,0xff), # blanco
-        (0x00,0x00,0x00,0x00), # transparent
+        (0x00,0x00,0x00,0xff), # transparent
         (0x99,0x99,0x99,0xff), # gris
         (0x00,0x00,0x00,0xff), # negro
     ]
@@ -68,16 +68,16 @@ with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Ga
 
 def fromaddr(addr, do_print=False, bpp=2, palette=None):
     ar = []
-    length = (64 * bpp) / 8
-    tile = game.rom[addr:addr + length] 
+    length = int((64 * bpp) / 8)
+    tile = game.rom[addr:addr + length]
 
     if palette is None:
         palette = palettes[bpp - 1]
 
     for y in range(8):
-        low = ord(tile[y * bpp])
+        low = tile[y * bpp]
         if bpp == 2:
-            high = ord(tile[y * bpp + 1])
+            high = tile[y * bpp + 1]
         for bn in range(7, -1, -1):
             p = (low >> bn) & 0x1
             if bpp == 2:
@@ -117,13 +117,14 @@ def get_sprite(addr, size, bpp=2, palette=None, scale=1):
     w, h = size
     sw, sh = w / 8, h / 8
     pixel_count = w * h
-    segments_count = pixel_count / 64
+    print(sw, sh)
+    segments_count = int(pixel_count / 64)
     sprite = Image.new('RGBA', (w, h))
-    segment_length = (64 * bpp) / 8
+    segment_length = int((64 * bpp) / 8)
 
     for index in range(segments_count):
-        y = (index / sw) * 8
-        x = (index % sw) * 8
+        y = int(index / sw) * 8
+        x = int(index % sw) * 8
         offset = addr + index * segment_length
         segment = fromaddr(offset, bpp=bpp, palette=palette)
         sprite.paste(segment, (x, y))
@@ -137,7 +138,9 @@ def get_map_tile(addr, palette=None):
     image = Image.new('RGBA', (32, 32))
     data = game.rom[addr:addr + 16]
     for index, spid in enumerate(data):
-        spindex = ord(spid) - 1
+        spindex = spid - 1
+        if spindex >= 129:
+            continue
         if not tile_cache[spindex]:
             tile_cache[spindex] = get_sprite(
                 game.MAP_SPRITES_OFFSET + 16 * spindex,
@@ -145,16 +148,16 @@ def get_map_tile(addr, palette=None):
                 palette=palette,
             )
         chunk = tile_cache[spindex]
-        y = (index / 4) * 8
-        x = (index % 4) * 8
+        y = int(index / 4) * 8
+        x = int(index % 4) * 8
         image.paste(chunk, (x, y))
 
     return image
 
 def get_map_image(addr, palette=None, size=(10, 9)):
     # 38 39 01 01 38 39 01 4D
-    w = ord(game.rom[addr]) - 1
-    h = ord(game.rom[addr + 1])
+    w = game.rom[addr] - 1
+    h = game.rom[addr + 1]
     w, h = size
     image = Image.new('RGBA', (w * 32, h * 32),
         color=(0x00, 0x99, 0x00, 0xff)
@@ -163,13 +166,13 @@ def get_map_image(addr, palette=None, size=(10, 9)):
     n = w * h
 
     for index in range(w * h):
-        tile_id = ord(game.rom[offset + index])
+        tile_id = game.rom[offset + index]
 
         tile = get_map_tile(game.MAP_TILES_OFFSET + tile_id * 16,
             palette=palette
         )
-        y = (index / w) * 32
-        x = (index % w) * 32
+        y = int(index / w) * 32
+        x = int(index % w) * 32
         image.paste(tile, (x, y))
 
     return image
@@ -241,8 +244,8 @@ def app(environ, start_response):
             pkmn = {}
             data.append({
                 "id": pokemon.id,
-                "name": [ord(n) for n in pokemon.name],
-                "description": [ord(n) for n in pokemon.description],
+                "name": [n for n in pokemon.name],
+                "description": [n for n in pokemon.description],
                 "evolutions": [{
                     "into_id": e.into_id,
                     "type": e.type,
@@ -255,16 +258,17 @@ def app(environ, start_response):
                 } for l in pokemon.learns]
             })
         start_response('200 OK', [('Content-Type', 'application/json')])
-        return [json.dumps(data)]
+        return [json.dumps(data).encode()]
 
     elif path == '/moves.json':
         moves = game.parse_moves(decode_text=False)
 
         start_response('200 OK', [('Content-Type', 'application/json')])
+        
         return [
             json.dumps({
-                "moves": [[ord(t) for t in m] for m in moves]
-            })
+                "moves": [[t for t in m] for m in moves]
+            }).encode()
         ]
 
     elif path == '/places.json':
@@ -326,7 +330,7 @@ def app(environ, start_response):
         else:
             image = get_sprite(offset, size, bpp=depth, scale=scale)
 
-        io = StringIO()
+        io = BytesIO()
         io.seek(0)
         image.save('./super.png')
         image.save(io, format="png")
@@ -337,7 +341,7 @@ def app(environ, start_response):
 
     elif path == '/':
         start_response('200 OK', [('Content-Type', 'text/html')])
-        with open(join(dirname(__file__), 'static/index.html')) as fp:
+        with open(join(dirname(__file__), 'static/index.html'), 'rb') as fp:
             return [fp.read()]
 
 if __name__ == '__main__':

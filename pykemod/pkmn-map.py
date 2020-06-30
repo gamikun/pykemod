@@ -3,8 +3,8 @@ from binascii import hexlify
 from PIL import Image
 import numpy as np
 
-with open('./pkmn-chars.txt', 'rb') as f:
-  chars = [f.read(1) for i in range(256)]
+#with open('./pkmn-chars.txt', 'rb') as f:
+#chars = [f.read(1) for i in range(256)]
 
 pk_data = open('./Pokemon Red.gb', 'rb')
   
@@ -46,10 +46,22 @@ for i in range(190*83):
 # -- Evoluciones --
 EVOL_COLOR = (128, 0, 255)
 data[0x3B939*3:0x3B939*3+6] = EVOL_COLOR+EVOL_COLOR # Charmander -> Charmeleon
-data[0x3B95B*3:0x3B95B+3+6] = EVOL_COLOR+EVOL_COLOR # Charmeleon -> Charizard
+data[0x3B95B*3:0x3B95B*3+6] = EVOL_COLOR+EVOL_COLOR # Charmeleon -> Charizard
 data[0x3B94A*3:0x3B94A*3+6] = EVOL_COLOR+EVOL_COLOR # Squirtle   -> Warturtle
 data[0x3B96C*3:0x3B96C*3+6] = EVOL_COLOR+EVOL_COLOR # Warturtle  -> Blastoise
 data[0x3B2B1*3:0x3B2B1*3+6] = EVOL_COLOR+EVOL_COLOR # Cubone     -> Marowak
+
+# Maps
+# Pallet Town
+for index in range(10 * 9):
+  data[0x0182fb + index * 3:(0x0182fb + index * 3) + 3] = (0, 0, 0)
+#data[0x0182fb:0x0182fb + 10 * 9] = (0, 0, 0)
+# Viridian City
+for index in range(20 * 18):
+  data[0x0183ea + index * 3:(0x0183ea + index * 3) + 3] = (255, 128, 0)
+#data[0x0183ea:0x0183ea + 20 * 18] = (0, 0, 0)
+# Route 1
+#data[0x01C0FA:0x01C0FA + 10 * 18] = (0, 0, 0)
 
 # -- Rutas -- (estimado)
 ROUTE_COLOR = (0, 255, 255)
