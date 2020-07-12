@@ -164,10 +164,10 @@ class Game:
                 block_size = len(block)
                 wild = WildData()
                 wild.offset = offset
-                wild.rate = ord(block[0])
-                wild.choices = [(ord(block[index * 2 + 1]),
-                                 ord(block[index * 2 + 2]),)
-                    for index in range((block_size - 1) / 2)
+                wild.rate = block[0]
+                wild.choices = [(block[index * 2 + 1],
+                                 block[index * 2 + 2],)
+                    for index in range(int((block_size - 1) / 2))
                 ]
                 wild.calculate_chances()
                 choices.append(wild)
@@ -195,11 +195,11 @@ class Game:
                 chars.append('É')
                 chars.append(')')
             else:
-                cc = self.decode_map[ord(c)]
+                cc = self.decode_map[c]
                 if cc != '?':
                     chars.append(cc)
                 else:
-                    chars.append('[{:02X}]'.format(ord(c)))
+                    chars.append('[{:02X}]'.format(c))
                     
         return ''.join(chars)
 

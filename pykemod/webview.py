@@ -39,7 +39,7 @@ palettes = [
     ],
     [ # 2bpp
         (0xff,0xff,0xff,0xff), # blanco
-        (0x00,0x00,0x00,0xff), # transparent
+        (0x00,0x00,0x00,0x00), # transparent
         (0x99,0x99,0x99,0xff), # gris
         (0x00,0x00,0x00,0xff), # negro
     ]
@@ -117,7 +117,6 @@ def get_sprite(addr, size, bpp=2, palette=None, scale=1):
     w, h = size
     sw, sh = w / 8, h / 8
     pixel_count = w * h
-    print(sw, sh)
     segments_count = int(pixel_count / 64)
     sprite = Image.new('RGBA', (w, h))
     segment_length = int((64 * bpp) / 8)
@@ -181,6 +180,19 @@ def first_adapter(qs):
     def _first_adapter(qs):
         return qs[0]
     return _first_adapter
+
+def parse_palette(value):
+    colors = [
+        (
+            int(color[0:2], 16),
+            int(color[2:4], 16),
+            int(color[4:6], 16),
+            int(color[6:8], 16),
+        )
+        for color in value.split(',')
+    ]
+    return colors
+
 
 def app(environ, start_response):
     path = environ.get('PATH_INFO')
@@ -277,8 +289,8 @@ def app(environ, start_response):
         start_response('200 OK', [('Content-Type', 'application/json')])
         return [
             json.dumps({
-                "names": [[ord(t) for t in m] for m in names]
-            })
+                "names": [[t for t in m] for m in names]
+            }).encode()
         ]
 
     elif path == '/wild.json':
@@ -301,7 +313,7 @@ def app(environ, start_response):
                         ]
                     } if w else None for w in wild
                 ]
-            })
+            }).encode()
         ]
 
     elif path == '/sprite':
@@ -313,6 +325,8 @@ def app(environ, start_response):
         offset = int(qs.get('aoffset')[0])
         is_map_tile = bool(int(qs.get('is_map_tile')[0]))
         is_map = bool(int(qs.get('is_map')[0]))
+        palette = parse_palette(qs.get('palette')[0])\
+                  if 'palette' in qs else None
 
         if is_map:
             size = [int(x) for x in qs.get('size', '10,9')[0].split(',')]
@@ -328,7 +342,11 @@ def app(environ, start_response):
         elif is_map_tile:
             image = get_map_tile(offset)
         else:
-            image = get_sprite(offset, size, bpp=depth, scale=scale)
+            image = get_sprite(offset, size,
+                bpp=depth,
+                scale=scale,
+                palette=palette
+            )
 
         io = BytesIO()
         io.seek(0)
