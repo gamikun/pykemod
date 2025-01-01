@@ -63,7 +63,7 @@ class JSONEncoder(json.JSONEncoder):
             return ['POKEMON']
         return json.JSONEncoder.default(self, obj)
 
-with open('/Users/lizet/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/Pokemon Red.gb', 'rb') as fp:
+with open('/Users/soul/Library/Application Support/OpenEmu/Game Library/roms/Game Boy/pokemon-red.gb', 'rb') as fp:
     game = Game(fp.read())
 
 def fromaddr(addr, do_print=False, bpp=2, palette=None):
