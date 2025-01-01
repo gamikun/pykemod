@@ -129,7 +129,10 @@ def get_sprite(addr, size, bpp=2, palette=None, scale=1):
         sprite.paste(segment, (x, y))
 
     if scale > 1:
-        return sprite.resize((w * scale, h * scale))
+        return sprite.resize(
+          (w * scale, h * scale),
+          resample=Image.NEAREST,
+        )
 
     return sprite
 
