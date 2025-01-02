@@ -29,13 +29,17 @@ class Game:
     EVO_OFFSET               = 0x3b1d8
 
     # Outdoors
-    MAP_SPRITES_OFFSET       = 0x64010 # NEW 0x64020 # OLD: 
+    MAP_SPRITES_OFFSET       = 0x64010
     MAP_TILES_OFFSET         = 0x645E0
 
     # Indoors
     HOUSE_SPRITES_OFFSET     = 0x64df0
     HOUSE_MAP_TILES_OFFSET   = 0x65270
-    # 49,379 bytes
+
+    # Houses 2
+    HOUSE_2_SPRITES_OFFSET   = 0x653b0
+    HOUSE_2_MAP_TILES_OFFSET = 0x65980
+    # 0x65bb0: 47,299 bytes
 
     # 50835 bytes
     ROUTE_NAMES_OFFSET       = 0x71473 # ~0x716bd

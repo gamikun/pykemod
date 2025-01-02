@@ -53,6 +53,7 @@ default_palette = [
 tile_cache = {
     "outdoor": [None] * 129,
     "house": [None] * 129,
+    "house_2": [None] * 129,
 }
 
 class state:
@@ -150,6 +151,8 @@ def get_map_tile(addr, palette=None, map_section="outdoor"):
         if not tile_cache[map_section][spindex]:
             if map_section == "house":
                 sprite_offset = game.HOUSE_SPRITES_OFFSET
+            elif map_section == "house_2":
+                sprite_offset = game.HOUSE_2_SPRITES_OFFSET
             else:
                 sprite_offset = game.MAP_SPRITES_OFFSET
             tile_cache[map_section][spindex] = get_sprite(
@@ -164,7 +167,7 @@ def get_map_tile(addr, palette=None, map_section="outdoor"):
 
     return image
 
-def get_map_image(addr, palette=None, size=(10, 9)):
+def get_map_image(addr, palette=None, size=(10, 9), map_section="outdoor"):
     # 38 39 01 01 38 39 01 4D
     w = game.rom[addr] - 1
     h = game.rom[addr + 1]
@@ -178,7 +181,15 @@ def get_map_image(addr, palette=None, size=(10, 9)):
     for index in range(w * h):
         tile_id = game.rom[offset + index]
 
-        tile = get_map_tile(game.MAP_TILES_OFFSET + tile_id * 16,
+        if map_section == "house_2":
+            tiles_offset = game.HOUSE_2_MAP_TILES_OFFSET
+        elif map_section == "house":
+            tiles_offset = game.HOUSE_MAP_TILES_OFFSET
+        else:
+            tiles_offset = game.MAP_TILES_OFFSET
+
+        tile = get_map_tile(tiles_offset + tile_id * 16,
+            map_section=map_section,
             palette=palette
         )
         y = int(index / w) * 32
@@ -398,6 +409,7 @@ def app(environ, start_response):
         if is_map:
             size = [int(x) for x in qs.get('size', '10,9')[0].split(',')]
             image = get_map_image(offset,
+                map_section=map_section,
                 palette=[
                     (0xff,0xff,0xff,0xff), # blanco
                     (0xC0,0xc0,0xC0,0xff), # gris
@@ -407,10 +419,7 @@ def app(environ, start_response):
                 size=size
             )
         elif is_map_tile:
-            if map_section == "house":
-                image = get_map_tile(offset, map_section=map_section)
-            else:
-                image = get_map_tile(offset)
+            image = get_map_tile(offset, map_section=map_section)
             
         else:
             image = get_sprite(offset, size,

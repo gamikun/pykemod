@@ -250,8 +250,10 @@ PKMN LIST
 <div style="text-align: center; padding: 24px   ">
     <button ng-click="loadMapSprites()">Outdoor sprites</button>
     <button ng-click="loadIndoorSprites()">Indoor sprites</button>
+    <button ng-click="loadHouse2Sprites()">House 2 sprites</button>
     <button ng-click="loadMapTiles()">Outdoor Map tiles</button>
     <button ng-click="loadHouseMapTiles()">House Map tiles</button>
+    <button ng-click="loadHouse2MapTiles()">House 2 Map tiles</button>
     <div style="border: 1px solid black; margin: 8px; padding: 8px">
       <input ng-model="mapOffset" />
       <button ng-click="loadMaps()">Maps</button>
@@ -365,24 +367,18 @@ app.controller('main', function($scope, $http) {
     $scope.isMapTile = isMapTile;
     $scope.sprites = sprites;
     $scope.mapOffsets = [
-      [0x0182fb, [10,  9]], // PALLET TOWN
-      [0x0183ea, [20, 18]], // VIRIDIAN CITY
-      [0x0185e4, [20, 18]], // PEWER CITY
-      [0x01882e, [20, 18]], // CERULEAN CITY
-      [0x018a3d, [20, 18]], // LAVENDER TOWN
-      [0x018c84, [20, 18]], // VERMILION CITY
-
-      // [0x0190FA, [8, 4]], // CELADON CITY
-      // [0x018d10+ 180, [20, 5]], // ROUTE 1
-
-      [0x01C0FA, [10, 18]], // ROUTE 1
-      
-      
-
-      [0x191e4, [8, 8]], // ROUTE 1
-
-
-
+      [0x182fb, [10,  9], "outdoor"], // PALLET TOWN
+      [0x183ea, [20, 18], "outdoor"], // VIRIDIAN CITY
+      [0x185e4, [20, 18], "outdoor"], // PEWER CITY
+      [0x1882e, [20, 18], "outdoor"], // CERULEAN CITY
+      [0x18a3d, [20, 18], "outdoor"], // LAVENDER TOWN
+      [0x18c84, [20, 18], "outdoor"], // VERMILION CITY
+      [0x1C0FA, [10, 18], "outdoor"], // ROUTE 1
+      [0x191e4, [8, 8], "house"], // ROUTE 1
+      [0x1c1fc, [4, 4], "house_2"],  // ASSAULTED HOUSE
+      [0x5080e, [30, 9], "outdoor"], // ROUTE TO BILL's HOUSE
+      [0x5c00e, [4, 4], "house"],    // Red's room
+      [0x5c01e + 16 * 7, [4, 4], "house"],
       // [0x01C0FA + 13430 + 60000, [8, 8]], // ROUTE 2
     ]
 
@@ -395,11 +391,13 @@ app.controller('main', function($scope, $http) {
             var base_offset = parseInt(mapOffset[0]);
             var offset = base_offset;
             var sz = mapOffset[1][0] + ',' + mapOffset[1][1];
+            const section = mapOffset[2].toString();
 
             sprites.push({
                 url: '/sprite?aoffset=' + offset.toString()
                     + '&depth=' + depth + '&size=' + sz
                     + '&is_map_tile=0&is_map=1'
+                    + '&map_section=' + section
                 ,
                 offset: '0x' + offset.toString('16')
             })
@@ -463,6 +461,27 @@ app.controller('main', function($scope, $http) {
         $scope.sprites = sprites;
     }
 
+    $scope.loadHouse2MapTiles = function() {
+        var base_offset = 0x65980;
+        var sprites = [];
+        var step = (width * height * depth) / 4;
+        // Prepare sprites to be shown
+        for (var index = 0; index < 36; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=1&is_map=0'
+                    + '&map_section=house_2'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = true;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
+
     $scope.loadMapSprites = function() {
         var depth = 2;
         var width = 8;
@@ -499,6 +518,31 @@ app.controller('main', function($scope, $http) {
 
         // Prepare sprites to be shown
         for (var index = 0; index < 72; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=0&is_map=0'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = false;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
+
+    $scope.loadHouse2Sprites = function() {
+        var depth = 2;
+        var width = 8;
+        var height = 8;
+        var base_offset = 0x653b0;
+        var step = (width * height * depth) / 8;
+        var finalSize = width + ',' + height;
+        var sprites = [];
+
+        // Prepare sprites to be shown
+        for (var index = 0; index < 93; index++) {
             var offset = base_offset + step * index;
             sprites.push({
                 url: '/sprite?aoffset=' + offset.toString()
