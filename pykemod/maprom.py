@@ -24,8 +24,8 @@ def maprom(game):
     fill_range(data, 0x14000, 0x17800)
 
     # Letters map
-    fill_range(data, game.LETTERS_OFFSET,
-        game.LETTERS_OFFSET + game.TOTAL_CHARS * 8,
+    fill_range(data, game.CHARACTERS_OFFSET,
+        game.CHARACTERS_OFFSET + game.TOTAL_CHARS * 8,
         color=(0, 0x99, 0)
     )
 
@@ -149,7 +149,7 @@ def fill_range(arr, begin, ends, color=(255,0,0)):
         arr[offset * 3:offset * 3 + 3] = color
 
 if __name__ == '__main__':
-    game = open_game('Pokemon Red.gb')
+    game = open_game('pokemon-red.gb')
     game.parse_evolutions()
     game.parse_moves()
     game.parse_route_names()

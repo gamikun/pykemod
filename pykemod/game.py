@@ -6,25 +6,44 @@ from binascii import unhexlify, hexlify
 
 
 class Game:
-    PKMN_NAMES_OFFSET = 0x1C21E
-    PKMN_DESCRIPTIONS_OFFSET = 0xAC001
     # PKMN_DESCRIPTIONS_OFFSET = 0xAEC77
     TOTAL_PKMN_SLOTS = 190
-    EVO_OFFSET = 242136
     TOTAL_MOVES = 165
-    MOVES_OFFSET = 0xB0000
-    ROUTE_NAMES_OFFSET = 0x71473
-    LETTERS_OFFSET = 0x11A80
-    DIALOGS_OFFSET = 0x0A4001
     TOTAL_CHARS = 128
     TOTAL_ROUTES = 53
-    WILD_OFFSET = 0x00D0DF
-    WILD_OFFSET_B = 0x00D2B1
-    WILD_OFFSET_C = 0x00D36A
-    WILD_OFFSET_D = 0x00D3FC
-    MAP_SPRITES_OFFSET = 0x64010
-    MAP_TILES_OFFSET = 0x0645E0
-    CHARACTERS_OFFSET = 0x011A80
+    TOTAL_ITEMS = 83
+    TOTAL_MAP_SPRITES = 93
+    TOTAL_MAP_TILES = 128
+
+    TOTAL_HOUSE_SPRITES = 72
+
+    # Offsets
+    ITEMS_NAMES_OFFSET       = 0x0472b # ~0x04abc
+    WILD_OFFSET              = 0x0D0DF # ~0x0d2ad - then 
+    WILD_OFFSET_B            = 0x0D2B1
+    WILD_OFFSET_C            = 0x0D36A
+    WILD_OFFSET_D            = 0x0D3FC
+    CHARACTERS_OFFSET        = 0x11A80 # ~0x11e80
+    # 41886 bytes
+    PKMN_NAMES_OFFSET        = 0x1C21E
+    EVO_OFFSET               = 0x3b1d8
+
+    # Outdoors
+    MAP_SPRITES_OFFSET       = 0x64010 # NEW 0x64020 # OLD: 
+    MAP_TILES_OFFSET         = 0x645E0
+
+    # Indoors
+    HOUSE_SPRITES_OFFSET     = 0x64df0
+    HOUSE_MAP_TILES_OFFSET   = 0x65270
+    # 49,379 bytes
+
+    # 50835 bytes
+    ROUTE_NAMES_OFFSET       = 0x71473 # ~0x716bd
+    # 207,172 bytes
+    DIALOGS_OFFSET           = 0xA4001
+    PKMN_DESCRIPTIONS_OFFSET = 0xAC001
+    MOVES_OFFSET             = 0xB0000
+
 
     decode_map = [
         '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', # 0
@@ -83,11 +102,31 @@ class Game:
         raise NotImplementedError('no pkmn evolution')
 
     def set_evolution(self, pkmn, level=0):
-        if pkmn == 0xB0:
-            self.rom[offset]
+        pass
+        # if pkmn == 0xB0:
+        #     self.rom[offset]
+
+    def extract_strings(self,
+        offset: int,
+        length: int = 50,
+        decode_text: bool = False,
+    ) -> list[str]|list[bytearray]:
+        strings = []
+        while len(strings) < length:
+            ending = self.rom.index(0x50, offset)
+            raw = self.rom[offset:ending]
+            if decode_text:
+                decoded = self.decode_text(raw)
+                strings.append(decoded)
+            else:
+                strings.append(raw)
+            offset = ending + 1
+        return strings
+    
+    def extract_items_names(self) -> list[bytearray]:
+        return self.extract_strings(self.ITEMS_NAMES_OFFSET, length=83)
 
     def parse_pokemons(self, decode_text=True):
-        from binascii import hexlify
         pkmns = []
         desc_offset = self.PKMN_DESCRIPTIONS_OFFSET
 
@@ -154,7 +193,7 @@ class Game:
 
     def parse_wild(self, offset=WILD_OFFSET):
         choices = []
-        total_items = 61
+        total_items = 21
         current = 0
 
         while True:
@@ -225,11 +264,14 @@ class Game:
                 raw = self.rom[offset:end_offset]
                 text = self.decode_text(raw)
                 offset = end_offset + 1
-                # print("{:02X} {}".format(index, text))
+                print(f"length = {len(raw)} (ending: {end_offset})")
             else:
                 break
 
         self.routes_names_upper_limit = offset
+
+    def pseudo_encode_text(self, text) -> bytes:
+        return bytearray([self.decode_map.index(ch) for ch in text])
 
     def parse_places_names(self):
         names = []

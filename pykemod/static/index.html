@@ -157,6 +157,85 @@ PKMN LIST
   </table>
 </div>
 
+<div style="padding:32px;">
+  <h1>EVOLUTIONS</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th style="padding: 16px">Index</th>
+        <th style="padding: 16px">From</th>
+        <th style="padding: 16px">To</th>
+        <th style="padding: 16px">How?</th>
+        <th style="padding: 16px">Level</th>
+        <th style="padding: 16px">Stone</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="e in evolutions track by $index">
+        <td style="text-align: center">
+          {{ $index }}
+        </td>
+        <!-- From Pokemon -->
+        <td style="text-align: center">
+          <img ng-src="/char.png?c={{c - 127}}"
+            style="width: 12px;"
+            ng-repeat="c in e.from_pokemon.name track by $index">
+        </td>
+
+        <!-- To Pokemon -->
+        <td style="padding: 16px">
+          <img ng-src="/char.png?c={{c - 127}}"
+            style="width: 12px;"
+            ng-repeat="c in e.to_pokemon.name track by $index">
+        </td>
+
+        <!-- How it evolves -->
+        <td style="text-align: center;">
+          {{ e.type.description }}
+        </td>
+
+        <!-- Which level -->
+        <td style="text-align: center">
+          {{ e.level }}
+        </td>
+
+        <!-- Evolution stone -->
+        <td style="text-align: center">
+          <img ng-src="/char.png?c={{c - 127}}"
+            style="width: 12px;"
+            ng-repeat="c in e.stone.name track by $index">
+          ({{ e.stone.id }})
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="padding:32px;">
+  <h1>ITEMS</h1>
+  <table border="1">
+    <thead>
+      <tr>
+        <th style="padding: 16px">ID</th>
+        <th style="padding: 16px">Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="i in items track by $index">
+        <td style="text-align: center">
+          {{ i.id }}
+        </td>
+        <!-- From Pokemon -->
+        <td style="text-align: center">
+          <img ng-src="/char.png?c={{c - 127}}"
+            style="width: 12px;"
+            ng-repeat="c in i.name track by $index">
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 <div>
     <h1>Places names</h1>
     <div ng-repeat="(index, place) in placesNames">
@@ -169,15 +248,18 @@ PKMN LIST
 
 
 <div style="text-align: center; padding: 24px   ">
-    <button ng-click="loadMapSprites()">Map sprites</button>
-    <button ng-click="loadMapTiles()">Map tiles</button>
+    <button ng-click="loadMapSprites()">Outdoor sprites</button>
+    <button ng-click="loadIndoorSprites()">Indoor sprites</button>
+    <button ng-click="loadMapTiles()">Outdoor Map tiles</button>
+    <button ng-click="loadHouseMapTiles()">House Map tiles</button>
     <div style="border: 1px solid black; margin: 8px; padding: 8px">
       <input ng-model="mapOffset" />
       <button ng-click="loadMaps()">Maps</button>
       
     </div>
     <button ng-click="loadEvolutions()">Load Evolutions</button>
-    <button ng-click="loadWild()">Load Wilf</button>
+    <button ng-click="loadItems()">Load Items</button>
+    <button ng-click="loadWild()">Load Wild Data</button>
     <button ng-click="loadCharacterSprites()">Load character sprites</button>
     <button ng-click="loadPlaces()">Load places names</button>
 
@@ -360,6 +442,27 @@ app.controller('main', function($scope, $http) {
         $scope.sprites = sprites;
     }
 
+    $scope.loadHouseMapTiles = function() {
+        var base_offset = 0x65270;
+        var sprites = [];
+        var step = (width * height * depth) / 4;
+        // Prepare sprites to be shown
+        for (var index = 0; index < 19; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=1&is_map=0'
+                    + '&map_section=house'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = true;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
+
     $scope.loadMapSprites = function() {
         var depth = 2;
         var width = 8;
@@ -370,7 +473,32 @@ app.controller('main', function($scope, $http) {
         var sprites = [];
 
         // Prepare sprites to be shown
-        for (var index = 0; index < 128; index++) {
+        for (var index = 0; index < 93; index++) {
+            var offset = base_offset + step * index;
+            sprites.push({
+                url: '/sprite?aoffset=' + offset.toString()
+                    + '&depth=' + depth + '&size=' + finalSize
+                    + '&is_map_tile=0&is_map=0'
+                ,
+                offset: '0x' + offset.toString('16')
+            })
+        }
+        $scope.isMapTile = false;
+        $scope.isMap = false;
+        $scope.sprites = sprites;
+    }
+
+    $scope.loadIndoorSprites = function() {
+        var depth = 2;
+        var width = 8;
+        var height = 8;
+        var base_offset = 0x64df0;
+        var step = (width * height * depth) / 8;
+        var finalSize = width + ',' + height;
+        var sprites = [];
+
+        // Prepare sprites to be shown
+        for (var index = 0; index < 72; index++) {
             var offset = base_offset + step * index;
             sprites.push({
                 url: '/sprite?aoffset=' + offset.toString()
@@ -409,6 +537,20 @@ app.controller('main', function($scope, $http) {
     $scope.loadEvolutions = function() {
       fetch('/evolutions.json').then(function(response) {
         return response.json();
+      }).then(function(response) {
+        $scope.$apply(() => {
+          $scope.evolutions = response;
+        });
+      });
+    }
+
+    $scope.loadItems = function() {
+      fetch('/items.json').then(function(response) {
+        return response.json();
+      }).then(function(response) {
+        $scope.$apply(() => {
+          $scope.items = response;
+        });
       });
     }
 

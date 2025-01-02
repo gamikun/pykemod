@@ -14,6 +14,11 @@ class Pokemon(object):
         self.name = k.get('name', None)
         self.description = k.get('description', None)
 
+    def as_json(self):
+        return {
+            "id": self.id
+        }
+
 
 class Learn(object):
     __slots__ = ['move_id', 'level']

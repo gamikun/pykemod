@@ -7,14 +7,13 @@ from pykemod.game import Game
 from pykemod.graphics import image16_from_raw, \
                              image8_from_raw, \
                              image8x8_from_bitmap1
-from pykemod.pokemon import Pokemon
+from pykemod.pokemon import Pokemon, Evolution
 from wsgiref.handlers import format_date_time
 import email.utils as eut
 from binascii import hexlify
 from io import BytesIO
 from PIL import Image
 from struct import unpack
-from datetime import datetime
 import time
 import json
 
@@ -51,7 +50,10 @@ default_palette = [
     (0x99,0x99,0x99,0xff), # gris
     (0x00,0x00,0x00,0xff), # negro
 ]
-tile_cache = [None] * 129
+tile_cache = {
+    "outdoor": [None] * 129,
+    "house": [None] * 129,
+}
 
 class state:
     charmap = None
@@ -90,12 +92,14 @@ def fromaddr(addr, do_print=False, bpp=2, palette=None):
 
     return image
 
-def get_charmap():
+def get_charmap() -> list[bytes]:
     charmap = []
     offset = game.CHARACTERS_OFFSET
-    for index in range(256):
+    for _ in range(256):
         achar = get_sprite(offset, (8, 8), bpp=1)
-        charmap.append(achar)
+        with BytesIO() as output:
+            achar.save(output, format="PNG")
+            charmap.append(output.getvalue())
         offset += 8
     return charmap
 
@@ -136,20 +140,24 @@ def get_sprite(addr, size, bpp=2, palette=None, scale=1):
 
     return sprite
 
-def get_map_tile(addr, palette=None):
+def get_map_tile(addr, palette=None, map_section="outdoor"):
     image = Image.new('RGBA', (32, 32))
     data = game.rom[addr:addr + 16]
     for index, spid in enumerate(data):
         spindex = spid - 1
         if spindex >= 129:
             continue
-        if not tile_cache[spindex]:
-            tile_cache[spindex] = get_sprite(
-                game.MAP_SPRITES_OFFSET + 16 * spindex,
+        if not tile_cache[map_section][spindex]:
+            if map_section == "house":
+                sprite_offset = game.HOUSE_SPRITES_OFFSET
+            else:
+                sprite_offset = game.MAP_SPRITES_OFFSET
+            tile_cache[map_section][spindex] = get_sprite(
+                sprite_offset + 16 * spindex,
                 (8, 8),
                 palette=palette,
             )
-        chunk = tile_cache[spindex]
+        chunk = tile_cache[map_section][spindex]
         y = int(index / 4) * 8
         x = int(index % 4) * 8
         image.paste(chunk, (x, y))
@@ -221,6 +229,11 @@ def app(environ, start_response):
         return [
             html_templete.format(content='')
         ]
+    
+    # elif path.startswith("/pkmn-names/"):
+    #     pkmn_id = int(path.split("/")[-1].split(".")[0])
+    #     start_response('200 OK', [('Content-Type', 'text/html')])
+    #     return [json.dumps({"pkmn_id": pkmn_id}).encode()]
 
     elif path == '/char.png':
         qs = parse_qs(environ['QUERY_STRING'])
@@ -231,20 +244,13 @@ def app(environ, start_response):
         if if_mod and state.last_modified < now:
             start_response('304 Not Modified', [])
             return ['']
-            
-        if not state.charmap:
-            state.charmap = get_charmap()
-            state.last_modified = now
 
-        char = state.charmap[c - 1]
-        with BytesIO() as output:
-            char.save(output, format="PNG")
-            start_response('200 OK', [
-                ('Content-Type', 'image/png'),
-                ('Cache-Control', 'public'),
-                ('Last-Modified', format_date_time(state.last_modified)),
-            ])
-            return [output.getvalue()]
+        start_response('200 OK', [
+            ('Content-Type', 'image/png'),
+            ('Cache-Control', 'public'),
+            ('Last-Modified', format_date_time(state.last_modified)),
+        ])
+        return [state.charmap[c - 1]]
 
     elif path == '/pokemons.json':
         qs = parse_qs(environ['QUERY_STRING'])
@@ -272,8 +278,65 @@ def app(environ, start_response):
                     "level": l.level   
                 } for l in pokemon.learns]
             })
+
         start_response('200 OK', [('Content-Type', 'application/json')])
         return [json.dumps(data).encode()]
+    
+    elif path == '/items.json':
+        qs = parse_qs(environ['QUERY_STRING'])
+        items_names = [{
+            "id": item_index + 1,
+            "name": [x for x in y]
+        } for item_index, y in enumerate(game.extract_items_names())]
+
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        return [json.dumps(items_names).encode()]
+    
+    elif path == '/evolutions.json':
+        qs = parse_qs(environ['QUERY_STRING'])
+
+        if not game.pokemons:
+            game.parse_pokemons(decode_text=False)
+
+        items_names = game.extract_items_names()
+        game.parse_evolutions()
+
+        types_map = {
+            Evolution.LEVEL: "Level",
+            Evolution.STONE: "Stone",
+            Evolution.INTERCHANGE: "Interchange",
+        }
+
+        data = []
+        for pokemon in game.pokemons:
+            if pokemon.evolutions:
+                for evolution in pokemon.evolutions:
+                    data.append({
+                        "type": {
+                            "id": evolution.type,
+                            "description": types_map[evolution.type],
+                        },
+                        "level": evolution.level,
+                        "stone": {
+                            "id": evolution.stone_id,
+                            "name": [x for x in items_names[evolution.stone_id - 1]],
+                        } if evolution.stone_id else None,
+                        "from_pokemon": {
+                            "id": pokemon.id,
+                            "name": [n for n in pokemon.name]
+                        },
+                        "to_pokemon": {
+                            "id": evolution.into_id,
+                            "name": [n for n in game.pokemons[evolution.into_id - 1].name]
+                        }
+                    })
+
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        return [json.dumps(data).encode()]
+
+    elif path == '/favicon.ico':
+        start_response('200 OK', [('Content-Type', 'image/x-icon')])
+        return [open('./pykemod/static/favicon.ico', 'rb').read()]
 
     elif path == '/moves.json':
         moves = game.parse_moves(decode_text=False)
@@ -326,6 +389,7 @@ def app(environ, start_response):
         size = [int(x) for x in qs.get('size', '16,16')[0].split(',')]
         depth = int(qs.get('depth', [2])[0])
         offset = int(qs.get('aoffset')[0])
+        map_section = qs.get('map_section', ["outdoor"])[0]
         is_map_tile = bool(int(qs.get('is_map_tile')[0]))
         is_map = bool(int(qs.get('is_map')[0]))
         palette = parse_palette(qs.get('palette')[0])\
@@ -343,7 +407,11 @@ def app(environ, start_response):
                 size=size
             )
         elif is_map_tile:
-            image = get_map_tile(offset)
+            if map_section == "house":
+                image = get_map_tile(offset, map_section=map_section)
+            else:
+                image = get_map_tile(offset)
+            
         else:
             image = get_sprite(offset, size,
                 bpp=depth,
@@ -368,6 +436,11 @@ def app(environ, start_response):
 if __name__ == '__main__':
     port = 8912
     from wsgiref.simple_server import make_server
+    
+    game.parse_pokemons(decode_text=False)
+    state.charmap = get_charmap()
+    state.last_modified = time.time()
+
     server = make_server('', port, app)
     print('starting: http://localhost:{}'.format(port))
     server.serve_forever()
