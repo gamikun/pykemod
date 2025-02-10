@@ -246,6 +246,61 @@ PKMN LIST
     </div>
 </div>
 
+<div>
+  <h1>Hola mundo</h1>
+  <div>
+    <img src="" id="mapExplore">
+    <div id="mapExploreOffset"></div>
+    <input id="exploreIncrement" value="64">
+    <button id="mapExploreStop">Stop</button>
+    <button id="mapExploreAddOneStep">Add</button>
+    <button id="mapExploreSubtractOneStep">Subtract</button>
+  </div>
+  <script>
+    (function() {
+      const TILE_SIZE = 16;
+      let st = { offset: 0x5c00e + 16, timeout: null, run: false };
+      const img = document.getElementById('mapExplore');
+      const labelOffset = document.getElementById('mapExploreOffset');
+      const increment = document.getElementById('exploreIncrement');
+
+      function loadImage() {
+        img.src = `/sprite?aoffset=${st.offset}&depth=1&size=16,16&is_map_tile=0&is_map=1&map_section=house`;
+      }
+      
+      img.addEventListener('load', function() {
+        labelOffset.textContent = "0x" + st.offset.toString(16);
+        if (st.run) {
+          st.timeout = setTimeout(loadImage, 50);
+        }
+      });
+
+      document.getElementById('mapExploreStop').addEventListener('click', function() {
+        if (st.run) {
+          st.run = false;
+          clearTimeout(st.timeout);
+          st.timeout = null;
+        } else {
+          st.run = true;
+          loadImage();
+        }
+      });
+
+      document.getElementById('mapExploreAddOneStep').addEventListener('click', function() {
+        st.offset += parseInt(increment.value);
+        loadImage();
+      });
+
+      document.getElementById('mapExploreSubtractOneStep').addEventListener('click', function() {
+        st.offset -= parseInt(increment.value);
+        loadImage();
+      });
+
+      loadImage();
+    })();
+  </script>
+</div>
+
 
 <div style="text-align: center; padding: 24px   ">
     <button ng-click="loadMapSprites()">Outdoor sprites</button>
@@ -291,6 +346,7 @@ PKMN LIST
                 {{ sprite.offset }}<br />
                 RID: {{ index + (isMapTile ? 0 : 1) }}
                 ({{ '0x' + (index + (isMapTile ? 0 : 1)).toString(16).toUpperCase() }})
+                Size: {{ sprite.width }}
             </p>
         </div>
     </div>
@@ -366,7 +422,11 @@ app.controller('main', function($scope, $http) {
     $scope.isMap = true
     $scope.isMapTile = isMapTile;
     $scope.sprites = sprites;
+    $scope.mapProspectOffset = 0x18355;
+    $scope.mapProspectSet = 'house';
     $scope.mapOffsets = [
+      // Outdoor sprites
+      [0x180dd, [25, 18], "outdoor"], // CELADON CITY
       [0x182fb, [10,  9], "outdoor"], // PALLET TOWN
       [0x183ea, [20, 18], "outdoor"], // VIRIDIAN CITY
       [0x185e4, [20, 18], "outdoor"], // PEWER CITY
@@ -374,12 +434,25 @@ app.controller('main', function($scope, $http) {
       [0x18a3d, [20, 18], "outdoor"], // LAVENDER TOWN
       [0x18c84, [20, 18], "outdoor"], // VERMILION CITY
       [0x1C0FA, [10, 18], "outdoor"], // ROUTE 1
-      [0x191e4, [8, 8], "house"], // ROUTE 1
-      [0x1c1fc, [4, 4], "house_2"],  // ASSAULTED HOUSE
-      [0x5080e, [30, 9], "outdoor"], // ROUTE TO BILL's HOUSE
-      [0x5c00e, [4, 4], "house"],    // Red's room
-      [0x5c01e + 16 * 7, [4, 4], "house"],
-      // [0x01C0FA + 13430 + 60000, [8, 8]], // ROUTE 2
+      
+
+      // [0x191e4, [ 8,  8],   "house"], // ROUTE 1
+      [0x1c1fc, [ 4,  4], "house_2"], // ASSAULTED HOUSE
+      [0x5080e, [30,  9], "outdoor"], // ROUTE TO BILL's HOUSE
+      [0x50a96, [20, 18], "outdoor"], // SAFFRON CITY
+      [0x54889, [30, 7], "outdoor"], // Route 13
+
+      [0x581c4, [30,  9], "outdoor"], // ROUTE 8
+      [0x58354, [10, 25], "outdoor"], // ENTRANCE TO DARK CAVE  
+      [0x5844e, [10, 11], "outdoor"], // LAVENDER CITY ARRIVAL
+      [0x5855d, [30, 9],  "outdoor"], // DROZEE ROUTE
+      [0x5870e, [10, 54],  "outdoor"], // FISHER ROUTE (EAST)
+      [0x589ca, [30, 9], "outdoor"], // SOUT ROUTE
+      [0x58b82, [20, 9], "outdoor"], // ???
+      [0x58c9a, [25, 9], "outdoor"], // END OF BIKE ROUTE
+
+      // House
+      [0x5c00e, [ 4,  4],   "house"], // Red's room
     ]
 
     $scope.loadMaps = function() {
